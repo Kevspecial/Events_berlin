@@ -9,8 +9,8 @@ ActiveAdmin.register User do
     column :email
     column :role
     column :created_at
-    column "Last Sign In" do |user|
-      user.remember_created_at&.strftime("%B %d, %Y at %I:%M %p") || "Never"
+    column 'Last Sign In' do |user|
+      user.remember_created_at&.strftime('%B %d, %Y at %I:%M %p') || 'Never'
     end
     actions
   end
@@ -23,8 +23,8 @@ ActiveAdmin.register User do
       row :role
       row :created_at
       row :updated_at
-      row "Last Remember" do |user|
-        user.remember_created_at&.strftime("%B %d, %Y at %I:%M %p") || "Never"
+      row 'Last Remember' do |user|
+        user.remember_created_at&.strftime('%B %d, %Y at %I:%M %p') || 'Never'
       end
     end
 

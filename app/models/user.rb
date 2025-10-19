@@ -33,11 +33,11 @@ class User < ApplicationRecord
 
   # Define searchable attributes for Ransack (used by Active Admin)
   def self.ransackable_attributes(_auth_object = nil)
-    ["created_at", "email", "id", "role", "updated_at"]
+    %w[created_at email id role updated_at]
   end
 
   # Define searchable associations for Ransack
   def self.ransackable_associations(_auth_object = nil)
-    ["bookings", "created_events", "attended_events"]
+    %w[bookings created_events attended_events]
   end
 end
