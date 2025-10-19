@@ -10,8 +10,8 @@ class CreateBookings < ActiveRecord::Migration[7.1]
 
       t.timestamps
     end
-    
-    add_index :bookings, [:user_id, :event_id]
+
+    add_index :bookings, %i[user_id event_id]
     add_index :bookings, :status
   end
 end

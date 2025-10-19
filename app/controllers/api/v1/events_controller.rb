@@ -3,8 +3,9 @@
 module Api
   module V1
     class EventsController < BaseController
-      skip_before_action :authenticate_user!, only: [:index, :show]
+      skip_before_action :authenticate_user!, only: %i[index show]
 
+      # rubocop:disable Metrics/AbcSize
       def index
         @events = Event.all
                        .by_category(params[:category_id])
@@ -14,12 +15,13 @@ module Api
 
         @events = params[:upcoming] == 'true' ? @events.upcoming : @events
 
-        render json: @events, include: [:category, :venue, :creator]
+        render json: @events, include: %i[category venue creator]
       end
+      # rubocop:enable Metrics/AbcSize
 
       def show
         @event = Event.includes(:category, :venue, :creator, :ticket_types).find(params[:id])
-        render json: @event, include: [:category, :venue, :creator, :ticket_types]
+        render json: @event, include: %i[category venue creator ticket_types]
       end
 
       def create

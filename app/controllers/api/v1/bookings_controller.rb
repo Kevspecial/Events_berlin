@@ -5,12 +5,12 @@ module Api
     class BookingsController < BaseController
       def index
         @bookings = current_user.bookings.includes(:event, :ticket_type)
-        render json: @bookings, include: [:event, :ticket_type]
+        render json: @bookings, include: %i[event ticket_type]
       end
 
       def show
         @booking = current_user.bookings.find(params[:id])
-        render json: @booking, include: [:event, :ticket_type]
+        render json: @booking, include: %i[event ticket_type]
       end
 
       def create
@@ -20,7 +20,7 @@ module Api
         if @booking.save
           # TODO: Trigger background job for confirmation email
           # BookingConfirmationJob.perform_later(@booking.id)
-          render json: @booking, status: :created, include: [:event, :ticket_type]
+          render json: @booking, status: :created, include: %i[event ticket_type]
         else
           render json: { errors: @booking.errors.full_messages }, status: :unprocessable_entity
         end
@@ -31,7 +31,7 @@ module Api
         authorize @booking
 
         if @booking.update(booking_params)
-          render json: @booking, include: [:event, :ticket_type]
+          render json: @booking, include: %i[event ticket_type]
         else
           render json: { errors: @booking.errors.full_messages }, status: :unprocessable_entity
         end

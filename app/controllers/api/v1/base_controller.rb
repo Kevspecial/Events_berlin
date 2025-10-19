@@ -5,7 +5,7 @@ module Api
     class BaseController < ApplicationController
       before_action :authenticate_user!
       skip_before_action :verify_authenticity_token
-      
+
       rescue_from ActiveRecord::RecordNotFound, with: :not_found
       rescue_from ActiveRecord::RecordInvalid, with: :unprocessable_entity
       rescue_from Pundit::NotAuthorizedError, with: :forbidden

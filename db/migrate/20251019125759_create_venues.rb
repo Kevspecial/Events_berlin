@@ -8,7 +8,7 @@ class CreateVenues < ActiveRecord::Migration[7.1]
 
       t.timestamps
     end
-    
-    add_index :venues, [:name, :city]
+
+    add_index :venues, %i[name city]
   end
 end

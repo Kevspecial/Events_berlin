@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 class EventSerializer < ActiveModel::Serializer
-  attributes :id, :name, :description, :location, :date, :private, :price, :capacity, :available_capacity, :created_at, :updated_at
+  attributes :id, :name, :description, :location, :date, :private, :price, :capacity, :available_capacity, :created_at,
+             :updated_at
 
   belongs_to :creator
   belongs_to :category

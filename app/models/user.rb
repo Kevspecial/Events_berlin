@@ -7,7 +7,7 @@ class User < ApplicationRecord
          :recoverable, :rememberable, :validatable
 
   # Roles enum
-  enum role: { attendee: 0, organizer: 1, admin: 2 }
+  enum :role, { attendee: 0, organizer: 1, admin: 2 }
 
   # Invites
   has_many :invites, foreign_key: :inviter_id, inverse_of: :event, dependent: :destroy

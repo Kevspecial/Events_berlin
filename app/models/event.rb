@@ -28,11 +28,13 @@ class Event < ApplicationRecord
   validates :capacity, numericality: { greater_than: 0, only_integer: true, allow_nil: true }
 
   # Scopes for filtering
-  scope :upcoming, -> { where('date >= ?', Time.current).order(date: :asc) }
-  scope :past, -> { where('date < ?', Time.current).order(date: :desc) }
+  scope :upcoming, -> { where(date: Time.current..).order(date: :asc) }
+  scope :past, -> { where(date: ...Time.current).order(date: :desc) }
   scope :by_category, ->(category_id) { where(category_id: category_id) if category_id.present? }
   scope :by_location, ->(location) { where('location ILIKE ?', "%#{location}%") if location.present? }
-  scope :by_date_range, ->(start_date, end_date) { where(date: start_date..end_date) if start_date.present? && end_date.present? }
+  scope :by_date_range, lambda { |start_date, end_date|
+    where(date: start_date..end_date) if start_date.present? && end_date.present?
+  }
   scope :search_by_name, ->(query) { where('name ILIKE ?', "%#{query}%") if query.present? }
 
   def available_capacity

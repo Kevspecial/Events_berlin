@@ -9,12 +9,12 @@ module Api
 
       def events
         @events = current_user.created_events.includes(:category, :venue)
-        render json: @events, include: [:category, :venue]
+        render json: @events, include: %i[category venue]
       end
 
       def bookings
         @bookings = current_user.bookings.includes(:event, :ticket_type)
-        render json: @bookings, include: [:event, :ticket_type]
+        render json: @bookings, include: %i[event ticket_type]
       end
     end
   end

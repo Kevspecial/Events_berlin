@@ -18,8 +18,8 @@ Rails.application.routes.draw do
       resources :events do
         resources :bookings, only: [:create]
       end
-      
-      resources :bookings, only: [:index, :show, :update] do
+
+      resources :bookings, only: %i[index show update] do
         member do
           patch :cancel
         end

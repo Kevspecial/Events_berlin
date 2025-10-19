@@ -22,13 +22,11 @@ class BookingService
   private
 
   def validate_availability!
-    if ticket_type.available_quantity < quantity
-      raise StandardError, 'Insufficient tickets available'
-    end
+    raise StandardError, 'Insufficient tickets available' if ticket_type.available_quantity < quantity
 
-    if event.capacity && event.available_capacity && event.available_capacity < quantity
-      raise StandardError, 'Event capacity exceeded'
-    end
+    return unless event.capacity && event.available_capacity && event.available_capacity < quantity
+
+    raise StandardError, 'Event capacity exceeded'
   end
 
   def create_booking
