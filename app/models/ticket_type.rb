@@ -11,4 +11,14 @@ class TicketType < ApplicationRecord
   def available_quantity
     quantity - bookings.where(status: %w[confirmed pending]).sum(:quantity)
   end
+
+  # Define searchable attributes for Ransack (used by Active Admin)
+  def self.ransackable_attributes(_auth_object = nil)
+    ["created_at", "id", "name", "price", "quantity", "updated_at"]
+  end
+
+  # Define searchable associations for Ransack
+  def self.ransackable_associations(_auth_object = nil)
+    ["bookings", "event"]
+  end
 end

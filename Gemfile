@@ -3,7 +3,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.2.3'
+ruby '3.2.2'
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'rails', '~> 7.1.0'
@@ -29,6 +29,12 @@ gem 'bootsnap', require: false
 
 # Devise is a flexible authentication solution for Rails
 gem 'devise', '~> 4.9', '>= 4.9.3'
+
+# Active Admin for administration interface
+gem 'activeadmin'
+
+# SASS support for Active Admin
+gem 'sassc-rails'
 
 # Authorization with Pundit
 gem 'pundit', '~> 2.3'

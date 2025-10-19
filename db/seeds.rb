@@ -195,3 +195,4 @@ puts "\nSample credentials:"
 puts "Admin: admin@events-berlin.com / password"
 puts "Organizer: organizer@events-berlin.com / password"
 puts "Attendee: alice@example.com / password"
+AdminUser.create!(email: 'admin@example.com', password: 'password', password_confirmation: 'password') if Rails.env.development?

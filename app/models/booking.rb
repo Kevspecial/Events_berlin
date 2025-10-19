@@ -15,6 +15,16 @@ class Booking < ApplicationRecord
   scope :pending, -> { where(status: 'pending') }
   scope :cancelled, -> { where(status: 'cancelled') }
 
+  # Define searchable attributes for Ransack (used by Active Admin)
+  def self.ransackable_attributes(_auth_object = nil)
+    ["created_at", "id", "quantity", "status", "total_price", "updated_at"]
+  end
+
+  # Define searchable associations for Ransack
+  def self.ransackable_associations(_auth_object = nil)
+    ["event", "ticket_type", "user"]
+  end
+
   private
 
   def calculate_total_price

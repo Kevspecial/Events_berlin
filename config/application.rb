@@ -20,6 +20,15 @@ module Eventsberlin
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
-    config.api_only = true
+    
+    # Enable sessions and middleware needed for Active Admin
+    # config.api_only = true # Commented out to enable sessions for Active Admin
+    
+    # Add session store configuration
+    config.session_store :cookie_store, key: '_events_berlin_session'
+    
+    # Ensure we have the necessary middleware for Active Admin
+    config.middleware.use ActionDispatch::Cookies
+    config.middleware.use ActionDispatch::Session::CookieStore
   end
 end
