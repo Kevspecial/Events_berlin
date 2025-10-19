@@ -6,6 +6,9 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
+  # Roles enum
+  enum :role, { attendee: 0, organizer: 1, admin: 2 }
+
   # Invites
   has_many :invites, foreign_key: :inviter_id, inverse_of: :event, dependent: :destroy
   has_many :sent_invites, foreign_key: :inviter_id, class_name: 'Invite', dependent: :destroy, inverse_of: :inviter
@@ -23,4 +26,8 @@ class User < ApplicationRecord
 
   # Events the user has created
   has_many :created_events, foreign_key: 'creator_id', class_name: 'Event', dependent: :destroy, inverse_of: :creator
+
+  # Bookings
+  has_many :bookings, dependent: :destroy
+  has_many :booked_events, through: :bookings, source: :event
 end

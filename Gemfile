@@ -3,7 +3,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.2.2'
+ruby '3.2.3'
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'rails', '~> 7.1.0'
@@ -19,8 +19,6 @@ gem 'importmap-rails'
 gem 'turbo-rails'
 # Hotwire's modest JavaScript framework [https://stimulus.hotwired.dev]
 gem 'stimulus-rails'
-# Build JSON APIs with ease [https://github.com/rails/jbuilder]
-gem 'jbuilder'
 
 gem 'rack-cors'
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
@@ -31,6 +29,21 @@ gem 'bootsnap', require: false
 
 # Devise is a flexible authentication solution for Rails
 gem 'devise', '~> 4.9', '>= 4.9.3'
+
+# Authorization with Pundit
+gem 'pundit', '~> 2.3'
+
+# Jbuilder for JSON views
+gem 'jbuilder', '~> 2.11'
+
+# ActiveModel Serializers for API responses
+gem 'active_model_serializers', '~> 0.10.0'
+
+# Background jobs with Sidekiq
+gem 'sidekiq', '~> 7.0'
+
+# Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
+gem 'image_processing', '~> 1.2'
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
