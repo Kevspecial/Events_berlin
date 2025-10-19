@@ -8,11 +8,22 @@ Events Berlin is an Eventbrite clone built with Ruby on Rails, featuring compreh
 
 - **Backend**: Ruby on Rails 7.1
 - **Database**: PostgreSQL
-- **Authentication**: Devise
+- **Authentication**: Devise (session-based)
 - **Authorization**: Pundit
 - **Background Jobs**: Sidekiq
 - **File Upload**: Active Storage
 - **API**: JSON API with ActiveModel Serializers
+
+## Authentication
+
+Currently using Devise with session-based authentication. For production API usage, consider implementing:
+- JWT token authentication (recommended for stateless API)
+- API token authentication
+- OAuth 2.0
+
+See `SECURITY.md` for detailed authentication setup recommendations.
+
+**CSRF Protection**: API endpoints use `protect_from_forgery with: :null_session` to support both session and token-based authentication. For production, implement proper token-based authentication.
 
 ## Models
 
