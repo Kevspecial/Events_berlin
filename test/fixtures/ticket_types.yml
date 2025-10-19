@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  event: one
+  name: General Admission
+  price: 29.99
+  quantity: 100
+  description: Standard ticket
+
+two:
+  event: one
+  name: VIP
+  price: 99.99
+  quantity: 20
+  description: VIP access with special perks

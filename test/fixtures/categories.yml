@@ -1,0 +1,9 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+music:
+  name: Music
+  description: Music events and concerts
+
+technology:
+  name: Technology
+  description: Tech meetups and conferences
