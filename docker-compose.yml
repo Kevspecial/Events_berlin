@@ -25,5 +25,20 @@ services:
       DATABASE_URL: postgres://postgres:postgres@db:5432/event_berlin_development
       RAILS_ENV: development
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    depends_on:
+      - web
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    working_dir: /app
+
 volumes:
   postgres_data:

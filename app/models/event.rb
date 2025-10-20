@@ -9,7 +9,7 @@ class Event < ApplicationRecord
   has_one_attached :image
 
   # Associations for attendees
-  has_many :attendings, foreign_key: :attended_event_id, dependent: :destroy, inverse_of: :event
+  has_many :attendings, foreign_key: :attended_event_id, dependent: :destroy, inverse_of: :attended_event
   has_many :attendees, through: :attendings, source: :attendee
 
   # Associations for invites
