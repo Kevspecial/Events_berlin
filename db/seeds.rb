@@ -13,6 +13,7 @@ Event.destroy_all
 Venue.destroy_all
 Category.destroy_all
 User.destroy_all
+AdminUser.delete_all if defined?(AdminUser)
 
 # Create categories
 puts 'Creating categories...'
@@ -233,22 +234,15 @@ puts 'Creating invites...'
 Invite.create!(event: private_event, inviter: organizer2, invitee: alice)
 Invite.create!(event: private_event, inviter: organizer2, invitee: bob)
 
-puts "\n=== Seed Complete ==="
-puts "Created #{User.count} users"
-puts "Created #{Category.count} categories"
-puts "Created #{Venue.count} venues"
-puts "Created #{Event.count} events"
-puts "Created #{TicketType.count} ticket types"
-puts "Created #{Booking.count} bookings"
-puts "Created #{Attending.count} attendings"
-puts "Created #{Invite.count} invites"
 puts "\nSample credentials:"
 puts 'Admin: admin@events-berlin.com / password'
 puts 'Organizer: organizer@events-berlin.com / password'
 puts 'Attendee: alice@example.com / password'
-if Rails.env.development?
-  AdminUser.create!(email: 'admin@example.com', password: 'password',
-                    password_confirmation: 'password')
+if Rails.env.development? && defined?(AdminUser)
+  AdminUser.find_or_create_by!(email: 'admin@example.com') do |admin|
+    admin.password = 'password'
+    admin.password_confirmation = 'password'
+  end
 end
 
 # --- Additional dataset for richer testing ---
@@ -363,6 +357,17 @@ extra_users = []
     role: :attendee
   )
 end
+
+# Final report after all extra data has been created
+puts "\n=== Seed Complete ==="
+puts "Created #{User.count} users"
+puts "Created #{Category.count} categories"
+puts "Created #{Venue.count} venues"
+puts "Created #{Event.count} events"
+puts "Created #{TicketType.count} ticket types"
+puts "Created #{Booking.count} bookings"
+puts "Created #{Attending.count} attendings"
+puts "Created #{Invite.count} invites"
 
 # Extra bookings
 puts 'Creating additional bookings...'
