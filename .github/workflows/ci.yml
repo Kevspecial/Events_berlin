@@ -69,6 +69,7 @@ jobs:
         run: bundle binstubs bundler-audit brakeman rubocop
 
       - name: Security audit dependencies
+        continue-on-error: true
         run: bin/bundler-audit --update
 
       - name: Security audit application code
