@@ -4,7 +4,7 @@
 # The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
 
 # Clear old data
-puts 'Clearing existing data...'
+Rails.logger.info 'Clearing existing data...'
 Booking.destroy_all
 TicketType.destroy_all
 Attending.destroy_all
@@ -16,7 +16,7 @@ User.destroy_all
 AdminUser.delete_all if defined?(AdminUser)
 
 # Create categories
-puts 'Creating categories...'
+Rails.logger.info 'Creating categories...'
 music = Category.create!(name: 'Music', description: 'Concerts, festivals, and live music events')
 tech = Category.create!(name: 'Technology', description: 'Tech meetups, conferences, and workshops')
 sports = Category.create!(name: 'Sports', description: 'Sports events and fitness activities')
@@ -24,7 +24,7 @@ food = Category.create!(name: 'Food & Drink', description: 'Food festivals, wine
 arts = Category.create!(name: 'Arts & Culture', description: 'Art exhibitions, theater, and cultural events')
 
 # Create venues
-puts 'Creating venues...'
+Rails.logger.info 'Creating venues...'
 
 # Base venues used by initial events
 arena = Venue.create!(
@@ -87,7 +87,7 @@ startup_hub = Venue.create!(
 ## Additional events/users/bookings are moved to the end so required variables are defined first
 
 # Create users
-puts 'Creating users...'
+Rails.logger.info 'Creating users...'
 User.create!(
   email: 'admin@events-berlin.com',
   password: 'password',
@@ -119,7 +119,7 @@ if defined?(AdminUser)
 end
 
 # Create events
-puts 'Creating events...'
+Rails.logger.info 'Creating events...'
 
 # Music event
 music_event = organizer1.created_events.create!(
@@ -203,7 +203,7 @@ private_event.ticket_types.create!([
                                    ])
 
 # Create some bookings
-puts 'Creating bookings...'
+Rails.logger.info 'Creating bookings...'
 Booking.create!(
   user: alice,
   event: music_event,
@@ -232,20 +232,20 @@ Booking.create!(
 )
 
 # Create attendings (for backward compatibility)
-puts 'Creating event attendees...'
+Rails.logger.info 'Creating event attendees...'
 music_event.attendees << alice
 music_event.attendees << bob
 tech_event.attendees << carol
 
 # Create invites
-puts 'Creating invites...'
+Rails.logger.info 'Creating invites...'
 Invite.create!(event: private_event, inviter: organizer2, invitee: alice)
 Invite.create!(event: private_event, inviter: organizer2, invitee: bob)
 
-puts "\nSample credentials:"
-puts 'Admin: admin@events-berlin.com / password'
-puts 'Organizer: organizer@events-berlin.com / password'
-puts 'Attendee: alice@example.com / password'
+Rails.logger.info "\nSample credentials:"
+Rails.logger.info 'Admin: admin@events-berlin.com / password'
+Rails.logger.info 'Organizer: organizer@events-berlin.com / password'
+Rails.logger.info 'Attendee: alice@example.com / password'
 if Rails.env.development? && defined?(AdminUser)
   AdminUser.find_or_create_by!(email: 'admin@example.com') do |admin|
     admin.password = 'password'
@@ -254,7 +254,7 @@ if Rails.env.development? && defined?(AdminUser)
 end
 
 # --- Additional dataset for richer testing ---
-puts '\nCreating additional sample dataset...'
+Rails.logger.info '\nCreating additional sample dataset...'
 
 # Sports event
 sports_event = organizer1.created_events.create!(
@@ -367,18 +367,18 @@ extra_users = []
 end
 
 # Final report after all extra data has been created
-puts "\n=== Seed Complete ==="
-puts "Created #{User.count} users"
-puts "Created #{Category.count} categories"
-puts "Created #{Venue.count} venues"
-puts "Created #{Event.count} events"
-puts "Created #{TicketType.count} ticket types"
-puts "Created #{Booking.count} bookings"
-puts "Created #{Attending.count} attendings"
-puts "Created #{Invite.count} invites"
+Rails.logger.info "\n=== Seed Complete ==="
+Rails.logger.info "Created #{User.count} users"
+Rails.logger.info "Created #{Category.count} categories"
+Rails.logger.info "Created #{Venue.count} venues"
+Rails.logger.info "Created #{Event.count} events"
+Rails.logger.info "Created #{TicketType.count} ticket types"
+Rails.logger.info "Created #{Booking.count} bookings"
+Rails.logger.info "Created #{Attending.count} attendings"
+Rails.logger.info "Created #{Invite.count} invites"
 
 # Extra bookings
-puts 'Creating additional bookings...'
+Rails.logger.info 'Creating additional bookings...'
 all_events = [music_event, tech_event, arts_event, sports_event, food_event, club_event, networking_event,
               cultural_event]
 

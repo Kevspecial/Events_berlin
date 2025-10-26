@@ -8,6 +8,8 @@ Be an experienced fullstack software engineer, always use these guides:
 - **Nextjs**: https://nextjs.org/docs
 - **ActiveAdmin**: https://activeadmin.info/
 
+- https://docs.rubocop.org/rubocop-rails/index.html
+
 ## Project Overview
 
 Box2.0-up-1 is a Rails 7.1 application using Ruby 3.2.2, designed as a modern web application with enterprise features. The project is hosted on GitLab at `git@github.com:Kevspecial/Events_berlin.git` and follows Eventbrite (Website & App) organizational patterns.
