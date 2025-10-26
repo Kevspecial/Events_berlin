@@ -1,9 +1,12 @@
-'use client';
+"use client";
 
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
+import EventCard from '@/components/EventCard';
+import { useEvents } from '@/hooks/useEvents';
 
 export default function Home() {
+  const { data: eventsData, isLoading, error } = useEvents({ per_page: 8 });
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -21,18 +24,43 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Events will be loaded here via API */}
-          <div className="text-center py-12">
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-8 max-w-md mx-auto">
-              <div className="text-4xl mb-4">🎪</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Events Loading...
-              </h3>
-              <p className="text-gray-600">
-                Connecting to the Events Berlin API
-              </p>
+          {/* Events area */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 animate-pulse">
+                  <div className="h-48 bg-gray-200" />
+                  <div className="p-6">
+                    <div className="h-4 bg-gray-200 rounded mb-2" />
+                    <div className="h-3 bg-gray-200 rounded mb-4" />
+                    <div className="h-3 bg-gray-200 rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-auto">
+                <div className="text-red-400 text-4xl mb-4">⚠️</div>
+                <h3 className="text-lg font-semibold text-red-900 mb-2">Error Loading Featured Events</h3>
+                <p className="text-red-600">{(error as any).message || 'Please try again.'}</p>
+              </div>
+            </div>
+          ) : eventsData && eventsData.data && eventsData.data.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {eventsData.data.slice(0, 8).map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md mx-auto">
+                <div className="text-gray-400 text-4xl mb-4">🔍</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Featured Events</h3>
+                <p className="text-gray-600">Please check back later or browse all events.</p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
