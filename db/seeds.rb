@@ -110,6 +110,14 @@ alice = User.create!(email: 'alice@example.com', password: 'password', role: :at
 bob = User.create!(email: 'bob@example.com', password: 'password', role: :attendee)
 carol = User.create!(email: 'carol@example.com', password: 'password', role: :attendee)
 
+# Ensure there's an AdminUser for ActiveAdmin (matches sample credentials)
+if defined?(AdminUser)
+  AdminUser.find_or_create_by!(email: 'admin@events-berlin.com') do |admin|
+    admin.password = 'password'
+    admin.password_confirmation = 'password'
+  end
+end
+
 # Create events
 puts 'Creating events...'
 
