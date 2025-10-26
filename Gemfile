@@ -6,7 +6,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '3.2.2'
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem 'rails', '~> 7.1.0'
+gem 'rails', '~> 7.1.5', '>= 7.1.5.2'
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem 'sprockets-rails'
 # Use PostgreSQL as the database for Active Record
@@ -21,6 +21,8 @@ gem 'turbo-rails'
 gem 'stimulus-rails'
 
 gem 'rack-cors'
+# Ensure rack is updated to mitigate known multipart/parser vulnerabilities
+gem 'rack', '>= 3.1.18'
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: %i[mingw mswin x64_mingw jruby]
 
@@ -64,6 +66,8 @@ group :development, :test do
   gem 'rubocop-capybara', require: false # RSpec-specific linting rules
   gem 'rubocop-performance', require: false # Performance-related linting rules
   gem 'rubocop-rails', require: false # Rails-specific linting rules
+  # Optional: include rubocop-capybara in development if you use its cops
+  # gem 'rubocop-capybara', require: false
 end
 
 group :development do
