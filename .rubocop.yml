@@ -12,6 +12,7 @@ AllCops:
     - 'node_modules/**/*'
     - 'vendor/**/*'
     - 'config/initializers/devise.rb'
+    - 'db/migrate/*active_storage*.rb'
 
 Layout/LineLength:
   Max: 120
@@ -21,6 +22,7 @@ Metrics/BlockLength:
   Exclude:
     - 'Guardfile'
     - 'db/schema.rb'
+    - 'db/migrate/*.rb'
 
 Style/Documentation:
   Enabled: false

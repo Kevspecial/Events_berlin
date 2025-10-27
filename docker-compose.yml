@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   db:
@@ -24,6 +24,23 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/event_berlin_development
       RAILS_ENV: development
+      RAILS_LOG_TO_STDOUT: "true"
+      RAILS_SERVE_STATIC_FILES: "true"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000" # Browser on 3001 -> container 3000
+    depends_on:
+      - web
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    working_dir: /app
 
 volumes:
   postgres_data:

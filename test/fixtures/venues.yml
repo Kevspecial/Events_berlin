@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+berlin_arena:
+  name: Berlin Arena
+  address: Main Street 123
+  city: Berlin
+  capacity: 5000
+
+small_hall:
+  name: Small Conference Hall
+  address: Tech Avenue 45
+  city: Berlin
+  capacity: 100

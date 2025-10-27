@@ -6,7 +6,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '3.2.2'
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem 'rails', '~> 7.1.0'
+gem 'rails', '~> 7.1.5', '>= 7.1.5.2'
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem 'sprockets-rails'
 # Use PostgreSQL as the database for Active Record
@@ -19,10 +19,10 @@ gem 'importmap-rails'
 gem 'turbo-rails'
 # Hotwire's modest JavaScript framework [https://stimulus.hotwired.dev]
 gem 'stimulus-rails'
-# Build JSON APIs with ease [https://github.com/rails/jbuilder]
-gem 'jbuilder'
 
 gem 'rack-cors'
+# Ensure rack is updated to mitigate known multipart/parser vulnerabilities
+gem 'rack', '>= 3.1.18'
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: %i[mingw mswin x64_mingw jruby]
 
@@ -31,6 +31,27 @@ gem 'bootsnap', require: false
 
 # Devise is a flexible authentication solution for Rails
 gem 'devise', '~> 4.9', '>= 4.9.3'
+
+# Active Admin for administration interface
+gem 'activeadmin'
+
+# SASS support for Active Admin
+gem 'sassc-rails'
+
+# Authorization with Pundit
+gem 'pundit', '~> 2.3'
+
+# Jbuilder for JSON views
+gem 'jbuilder', '~> 2.11'
+
+# ActiveModel Serializers for API responses
+gem 'active_model_serializers', '~> 0.10.0'
+
+# Background jobs with Sidekiq
+gem 'sidekiq', '~> 7.0'
+
+# Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
+gem 'image_processing', '~> 1.2'
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
@@ -45,6 +66,8 @@ group :development, :test do
   gem 'rubocop-capybara', require: false # RSpec-specific linting rules
   gem 'rubocop-performance', require: false # Performance-related linting rules
   gem 'rubocop-rails', require: false # Rails-specific linting rules
+  # Optional: include rubocop-capybara in development if you use its cops
+  # gem 'rubocop-capybara', require: false
 end
 
 group :development do
