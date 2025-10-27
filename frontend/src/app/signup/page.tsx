@@ -1,10 +1,13 @@
 "use client";
 
+"use client";
+
 import Link from 'next/link';
 import { WEB_ORIGIN } from '@/lib/config';
 
 export default function SignupPage() {
-  const signupUrl = `${WEB_ORIGIN}/users/sign_up`;
+  const signupUrl = `${WEB_ORIGIN}/users/sign_up?role=attendee`;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-8">
