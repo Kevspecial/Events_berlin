@@ -5,8 +5,8 @@ Rails.application.routes.draw do
   ActiveAdmin.routes(self)
   devise_for :users, controllers: { registrations: 'users/registrations' }
 
-  # Defines the root path route ("/")
-  # root 'home#index'
+  # Backend root - redirect to ActiveAdmin dashboard
+  root to: redirect('/admin')
 
   resources :events
   resources :users, only: [:show]

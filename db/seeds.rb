@@ -91,7 +91,8 @@ Rails.logger.info 'Creating users...'
 User.create!(
   email: 'admin@events-berlin.com',
   password: 'password',
-  role: :admin
+  role: :admin,
+  skip_admin_validation: true
 )
 
 organizer1 = User.create!(

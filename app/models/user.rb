@@ -9,6 +9,9 @@ class User < ApplicationRecord
   # Roles enum
   enum :role, { attendee: 0, organizer: 1, admin: 2 }
 
+  # Prevent admin role from being assigned through normal means
+  validate :prevent_admin_role_assignment, on: :create
+
   # Invites
   has_many :sent_invites, foreign_key: :inviter_id, class_name: 'Invite', dependent: :destroy, inverse_of: :inviter
   has_many :received_invites, foreign_key: :invitee_id, class_name: 'Invite', dependent: :destroy, inverse_of: :invitee
@@ -35,5 +38,17 @@ class User < ApplicationRecord
   # Define searchable associations for Ransack
   def self.ransackable_associations(_auth_object = nil)
     %w[bookings created_events attended_events]
+  end
+
+  # Flag to allow admin role assignment (for seeds/console)
+  attr_accessor :skip_admin_validation
+
+  private
+
+  # Prevent admin role from being assigned on creation (except through seeds/console)
+  def prevent_admin_role_assignment
+    return unless admin? && !skip_admin_validation
+
+    errors.add(:role, 'cannot be set to admin')
   end
 end
