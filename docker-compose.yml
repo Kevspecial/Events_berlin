@@ -31,8 +31,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    command: npm run dev -- --hostname 0.0.0.0 --port 3005
     ports:
-      - "3001:3000" # Browser on 3001 -> container 3000
+      - "3005:3005" # Browser on 3005 -> container 3005
     depends_on:
       - web
     environment:

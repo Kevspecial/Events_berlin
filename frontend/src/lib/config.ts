@@ -6,6 +6,6 @@ export const WEB_ORIGIN = (() => {
     // Strip path to get origin (protocol + host + port)
     return `${u.protocol}//${u.host}`;
   } catch {
-    return 'http://localhost:3000';
+    return 'http://localhost:3005';
   }
 })();
