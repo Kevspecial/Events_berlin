@@ -57,7 +57,7 @@ See `SECURITY.md` for detailed authentication setup recommendations.
 
 ### Booking
 - Belongs to user, event, ticket_type
-- Fields: quantity, total_price, status (pending, confirmed, cancelled)
+- Fields: quantity, total_price, status (pending, confirmed, cancelled), payment_status (unpaid, paid, failed, refunded), stripe_checkout_session_id, stripe_payment_intent_id, paid_at
 - Auto-calculates total_price based on quantity and ticket_type price
 
 ## API Endpoints
@@ -76,6 +76,13 @@ See `SECURITY.md` for detailed authentication setup recommendations.
 - `POST /api/v1/events/:id/bookings` - Create booking
 - `PUT /api/v1/bookings/:id` - Update booking
 - `PATCH /api/v1/bookings/:id/cancel` - Cancel booking
+
+### Checkout (Stripe)
+- `POST /api/v1/checkout/sessions` - Create Stripe Checkout session
+  - Request body: `{ booking_id: number }`
+  - Response: `{ checkout_url: string, session_id: string }`
+- `POST /api/v1/checkout/webhook` - Stripe webhook endpoint (no auth required)
+  - Handles: `checkout.session.completed`, `payment_intent.succeeded`, `payment_intent.payment_failed`
 
 ### Users
 - `GET /api/v1/users/profile` - Get current user profile
@@ -98,9 +105,10 @@ Handles ticket purchase logic:
 - Integrates with PaymentService
 
 ### PaymentService
-Placeholder for Stripe integration:
-- Process payments
-- Update booking status
+Stripe payment integration:
+- `create_payment_intent` - Create Stripe PaymentIntent for booking
+- `process_refund` - Refund a paid booking
+- `retrieve_checkout_session` - Get checkout session details
 
 ## Background Jobs
 
@@ -130,8 +138,21 @@ Performance indexes added for:
 
 1. Install dependencies: `bundle install`
 2. Setup database: `rails db:create db:migrate`
-3. Start server: `rails server`
-4. Start Sidekiq (optional): `bundle exec sidekiq`
+3. Configure Stripe:
+   - Get API keys from https://dashboard.stripe.com/apikeys
+   - Set environment variables:
+     ```bash
+     export STRIPE_SECRET_KEY=sk_test_...
+     export STRIPE_WEBHOOK_SECRET=whsec_...
+     export FRONTEND_URL=http://localhost:3001
+     ```
+   - Or add to Rails credentials: `EDITOR=vim rails credentials:edit`
+4. Start server: `rails server`
+5. Start Sidekiq (optional): `bundle exec sidekiq`
+6. For Stripe webhooks in local development, use Stripe CLI:
+   ```bash
+   stripe listen --forward-to localhost:3000/api/v1/checkout/webhook
+   ```
 
 ## Testing
 

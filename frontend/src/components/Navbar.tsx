@@ -3,81 +3,101 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Menu, X } from 'lucide-react';
+
+const navLinks = [
+  { label: 'Events', href: '/events' },
+  { label: 'Create Event', href: '/events/create' },
+  { label: 'About', href: '/about' },
+];
 
 export default function Navbar() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     setIsMenuOpen(false);
+    setIsProfileOpen(false);
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="fixed top-0 w-full bg-white z-50 border-b border-black/10">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center">
-            <Link href="/" className="text-2xl font-bold text-orange-600 hover:text-orange-700 transition-colors">
-              Evently
-            </Link>
+          <Link
+            href="/"
+            className="text-2xl font-black tracking-tight uppercase hover:opacity-70 transition-opacity"
+          >
+            BerlinEvents
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm font-bold uppercase tracking-wide text-black hover:opacity-50 transition-opacity"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link href="/events" className="text-gray-600 hover:text-orange-600 transition-colors">
-              Events
-            </Link>
-          </div>
-
-          {/* Desktop Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          {/* Desktop Auth */}
+          <div className="hidden md:flex items-center gap-4">
             {isLoading ? (
-              <div className="w-8 h-8 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
             ) : isAuthenticated && user ? (
               <div className="relative">
                 <button
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="flex items-center space-x-2 text-gray-700 hover:text-orange-600 transition-colors"
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide hover:opacity-50 transition-opacity"
                 >
-                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                    <span className="text-orange-600 font-medium text-sm">
-                      {user.name.charAt(0).toUpperCase()}
-                    </span>
+                  <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-xs font-black">
+                    {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <span className="font-medium">{user.name}</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <span>{user.name}</span>
                 </button>
 
-                {isMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm text-gray-500">Signed in as</p>
-                      <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
-                    </div>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                <AnimatePresence>
+                  {isProfileOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-3 w-56 bg-white border border-black/10 shadow-lg"
                     >
-                      Sign out
-                    </button>
-                  </div>
-                )}
+                      <div className="px-4 py-3 border-b border-black/10">
+                        <p className="text-xs text-black/50 uppercase tracking-wider">Signed in as</p>
+                        <p className="text-sm font-bold truncate mt-1">{user.email}</p>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-3 text-sm font-bold uppercase tracking-wide hover:bg-black hover:text-white transition-colors"
+                      >
+                        Sign Out
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ) : (
               <>
                 <Link
                   href="/login"
-                  className="text-gray-700 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="text-sm font-bold uppercase tracking-wide hover:opacity-50 transition-opacity"
                 >
                   Log In
                 </Link>
                 <Link
                   href="/signup"
-                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="bg-black text-white px-5 py-2 text-sm font-bold uppercase tracking-wide hover:bg-black/80 transition-colors"
                 >
                   Sign Up
                 </Link>
@@ -86,68 +106,76 @@ export default function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-600 hover:text-orange-600 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
-          </div>
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden p-1 hover:opacity-50 transition-opacity"
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMenuOpen}
+          >
+            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
-
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4">
-            <div className="space-y-2">
-              <Link
-                href="/events"
-                className="block px-3 py-2 text-gray-600 hover:text-orange-600 transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Events
-              </Link>
-              {isAuthenticated && user ? (
-                <>
-                  <div className="px-3 py-2 border-t border-gray-100 mt-2 pt-2">
-                    <p className="text-sm text-gray-500">Signed in as</p>
-                    <p className="text-sm font-medium text-gray-900">{user.email}</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-3 py-2 text-gray-600 hover:text-orange-600 transition-colors"
-                  >
-                    Sign out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="block px-3 py-2 text-gray-600 hover:text-orange-600 transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Log In
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="block px-3 py-2 text-orange-600 font-medium hover:text-orange-700 transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Sign Up
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden border-t border-black/10 bg-white overflow-hidden"
+          >
+            <div className="px-6 py-6 space-y-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="block py-3 text-lg font-black uppercase tracking-tight hover:opacity-50 transition-opacity"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+
+              <div className="pt-4 border-t border-black/10">
+                {isAuthenticated && user ? (
+                  <>
+                    <div className="py-3">
+                      <p className="text-xs text-black/50 uppercase tracking-wider">Signed in as</p>
+                      <p className="text-sm font-bold mt-1">{user.email}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left py-3 text-lg font-black uppercase tracking-tight hover:opacity-50 transition-opacity"
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className="block py-3 text-lg font-black uppercase tracking-tight hover:opacity-50 transition-opacity"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Log In
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="block py-3 text-lg font-black uppercase tracking-tight hover:opacity-50 transition-opacity"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

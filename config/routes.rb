@@ -32,6 +32,12 @@ Rails.application.routes.draw do
         end
       end
 
+      # Stripe checkout endpoints
+      namespace :checkout do
+        post 'sessions', to: 'checkout#create'
+        post 'webhook', to: 'checkout#webhook'
+      end
+
       namespace :users do
         get :profile
         get :events

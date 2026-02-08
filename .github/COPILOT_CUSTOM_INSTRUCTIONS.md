@@ -89,6 +89,9 @@ Prompt templates for the assistant
 Notes and constraints
 - Keep PRs small and focused. Large cross-cutting refactors should be split.
 - When touching production-facing code, run integration smoke tests locally if possible.
+- Frontend Design guide: Use '.github/frontend-spec.md' as inspiration.
+- PRD: dont deviate from '.github/PRD.md' as it has the goals of the version of this project.
+- 
 
 If unsure
 - Ask a short clarifying question and include the precise file and line range you plan to change.

@@ -69,6 +69,8 @@ export interface Booking {
   quantity: number;
   total_price: number;
   status: 'pending' | 'confirmed' | 'cancelled';
+  payment_status?: 'unpaid' | 'paid' | 'failed' | 'refunded';
+  paid_at?: string;
   created_at: string;
   updated_at: string;
   user?: User;
