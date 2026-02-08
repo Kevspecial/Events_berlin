@@ -17,6 +17,11 @@ Rails.application.routes.draw do
   # API routes
   namespace :api do
     namespace :v1 do
+      # Auth endpoints (no authentication required)
+      post 'signup', to: 'registrations#create'
+      post 'login', to: 'sessions#create'
+      delete 'logout', to: 'sessions#destroy'
+
       resources :events do
         resources :bookings, only: [:create]
       end

@@ -31,7 +31,7 @@ export default function EventDetailPage() {
   const totalPrice = useMemo(() => {
     if (!event?.ticket_types) return 0;
     const tt = event.ticket_types.find((t) => t.id === ticketTypeId);
-    return tt ? (tt.price || 0) * (quantity || 0) : 0;
+    return tt ? Number(tt.price || 0) * (quantity || 0) : 0;
   }, [event?.ticket_types, ticketTypeId, quantity]);
 
   const handleBook = async () => {
@@ -98,7 +98,7 @@ export default function EventDetailPage() {
                       >
                         {event.ticket_types.map((t) => (
                           <option key={t.id} value={t.id}>
-                            {t.name} — €{t.price.toFixed(2)}
+                            {t.name} — €{Number(t.price).toFixed(2)}
                           </option>
                         ))}
                       </select>

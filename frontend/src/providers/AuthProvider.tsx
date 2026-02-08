@@ -5,9 +5,9 @@ import { AuthUser, AuthState, SignupData, LoginData } from '@/types/auth';
 import { authService } from '@/services/authService';
 
 interface AuthContextType extends AuthState {
-  login: (data: LoginData) => { success: boolean; error?: string };
-  signup: (data: SignupData) => { success: boolean; error?: string };
-  logout: () => void;
+  login: (data: LoginData) => Promise<{ success: boolean; error?: string }>;
+  signup: (data: SignupData) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,8 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const login = useCallback((data: LoginData) => {
-    const result = authService.login(data);
+  const login = useCallback(async (data: LoginData) => {
+    const result = await authService.login(data);
     if (result.success && result.user) {
       setState({
         user: result.user,
@@ -41,8 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { success: result.success, error: result.error };
   }, []);
 
-  const signup = useCallback((data: SignupData) => {
-    const result = authService.signup(data);
+  const signup = useCallback(async (data: SignupData) => {
+    const result = await authService.signup(data);
     if (result.success && result.user) {
       setState({
         user: result.user,
@@ -53,8 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { success: result.success, error: result.error };
   }, []);
 
-  const logout = useCallback(() => {
-    authService.logout();
+  const logout = useCallback(async () => {
+    await authService.logout();
     setState({
       user: null,
       isAuthenticated: false,

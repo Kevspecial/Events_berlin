@@ -25,12 +25,12 @@ export default function SignupPage() {
     setError('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    const result = signup(formData);
+    const result = await signup(formData);
     
     if (result.success) {
       router.push('/');

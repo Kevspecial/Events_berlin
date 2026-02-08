@@ -23,12 +23,12 @@ export default function LoginPage() {
     setError('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    const result = login(formData);
+    const result = await login(formData);
     
     if (result.success) {
       router.push('/');

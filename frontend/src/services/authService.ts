@@ -1,51 +1,18 @@
-// Frontend-only authentication service using localStorage
-import { AuthUser, SignupData, LoginData, StoredUser } from '@/types/auth';
+// Frontend authentication service - syncs with Rails backend
+import api from '@/lib/api';
+import { AuthUser, SignupData, LoginData } from '@/types/auth';
 
-const USERS_STORAGE_KEY = 'evently_users';
 const CURRENT_USER_KEY = 'evently_current_user';
 
-// Simple hash function for demo purposes (NOT secure for production)
-const simpleHash = (str: string): string => {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return hash.toString(36);
-};
-
-// Generate a simple UUID
-const generateId = (): string => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-};
-
 export const authService = {
-  // Get all stored users
-  getStoredUsers: (): StoredUser[] => {
-    if (typeof window === 'undefined') return [];
-    const users = localStorage.getItem(USERS_STORAGE_KEY);
-    return users ? JSON.parse(users) : [];
-  },
-
-  // Save users to storage
-  saveUsers: (users: StoredUser[]): void => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-  },
-
-  // Get current user
+  // Get current user from localStorage
   getCurrentUser: (): AuthUser | null => {
     if (typeof window === 'undefined') return null;
     const user = localStorage.getItem(CURRENT_USER_KEY);
     return user ? JSON.parse(user) : null;
   },
 
-  // Save current user
+  // Save current user to localStorage
   setCurrentUser: (user: AuthUser | null): void => {
     if (typeof window === 'undefined') return;
     if (user) {
@@ -55,11 +22,11 @@ export const authService = {
     }
   },
 
-  // Sign up a new user
-  signup: (data: SignupData): { success: boolean; user?: AuthUser; error?: string } => {
+  // Sign up a new user - creates user in backend
+  signup: async (data: SignupData): Promise<{ success: boolean; user?: AuthUser; error?: string }> => {
     const { name, email, password, confirmPassword } = data;
 
-    // Validation
+    // Client-side validation
     if (!name || !email || !password) {
       return { success: false, error: 'All fields are required' };
     }
@@ -77,77 +44,76 @@ export const authService = {
       return { success: false, error: 'Invalid email format' };
     }
 
-    // Check if user already exists
-    const users = authService.getStoredUsers();
-    const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (existingUser) {
-      return { success: false, error: 'An account with this email already exists' };
+    try {
+      const response = await api.post('/signup', {
+        user: {
+          email: email.toLowerCase(),
+          password,
+          password_confirmation: confirmPassword,
+        },
+      });
+
+      const backendUser = response.data;
+      
+      // Create AuthUser with name (stored locally since backend doesn't have name field)
+      const authUser: AuthUser = {
+        id: String(backendUser.id),
+        email: backendUser.email,
+        name, // Keep name locally
+        role: backendUser.role || 'attendee',
+        createdAt: backendUser.created_at,
+      };
+
+      authService.setCurrentUser(authUser);
+      return { success: true, user: authUser };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { errors?: string[]; error?: string } }; message?: string };
+      const errorMessage = err.response?.data?.errors?.[0] || err.response?.data?.error || err.message || 'Signup failed';
+      return { success: false, error: errorMessage };
     }
-
-    // Create new user
-    const newUser: StoredUser = {
-      id: generateId(),
-      email: email.toLowerCase(),
-      name,
-      role: 'attendee',
-      createdAt: new Date().toISOString(),
-      passwordHash: simpleHash(password),
-    };
-
-    // Save user
-    users.push(newUser);
-    authService.saveUsers(users);
-
-    // Return user without password hash
-    const authUser: AuthUser = {
-      id: newUser.id,
-      email: newUser.email,
-      name: newUser.name,
-      role: newUser.role,
-      createdAt: newUser.createdAt,
-    };
-
-    // Auto-login after signup
-    authService.setCurrentUser(authUser);
-
-    return { success: true, user: authUser };
   },
 
-  // Login user
-  login: (data: LoginData): { success: boolean; user?: AuthUser; error?: string } => {
+  // Login user - authenticates with backend
+  login: async (data: LoginData): Promise<{ success: boolean; user?: AuthUser; error?: string }> => {
     const { email, password } = data;
 
     if (!email || !password) {
       return { success: false, error: 'Email and password are required' };
     }
 
-    const users = authService.getStoredUsers();
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    try {
+      const response = await api.post('/login', {
+        email: email.toLowerCase(),
+        password,
+      });
 
-    if (!user) {
-      return { success: false, error: 'Invalid email or password' };
+      const backendUser = response.data;
+      
+      // Create AuthUser (name will be empty for backend-only users)
+      const authUser: AuthUser = {
+        id: String(backendUser.id),
+        email: backendUser.email,
+        name: backendUser.email.split('@')[0], // Use email prefix as display name
+        role: backendUser.role || 'attendee',
+        createdAt: backendUser.created_at,
+      };
+
+      authService.setCurrentUser(authUser);
+      return { success: true, user: authUser };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      const errorMessage = err.response?.data?.error || err.message || 'Invalid email or password';
+      return { success: false, error: errorMessage };
     }
-
-    if (user.passwordHash !== simpleHash(password)) {
-      return { success: false, error: 'Invalid email or password' };
-    }
-
-    // Return user without password hash
-    const authUser: AuthUser = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      createdAt: user.createdAt,
-    };
-
-    authService.setCurrentUser(authUser);
-
-    return { success: true, user: authUser };
   },
 
   // Logout user
-  logout: (): void => {
+  logout: async (): Promise<void> => {
+    try {
+      await api.delete('/logout');
+    } catch {
+      // Ignore logout errors
+    }
     authService.setCurrentUser(null);
   },
 
