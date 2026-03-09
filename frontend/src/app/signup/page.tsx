@@ -51,12 +51,12 @@ export default function SignupPage() {
         transition={{ duration: 0.5 }}
       >
         <Link href="/" className="block text-2xl font-black uppercase tracking-tight mb-12 hover:opacity-50 transition-opacity">
-          EventLab
+          Berlin_Events
         </Link>
 
         <h1 className="heading-section text-4xl mb-2">Sign Up</h1>
         <p className="text-sm font-bold uppercase tracking-wide text-black/50 mb-8">
-          Join EventLab to discover amazing events.
+          Join Berlin_Events to discover amazing events.
         </p>
 
         {error && (

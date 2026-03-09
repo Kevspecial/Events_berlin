@@ -49,7 +49,7 @@ export default function LoginPage() {
         transition={{ duration: 0.5 }}
       >
         <Link href="/" className="block text-2xl font-black uppercase tracking-tight mb-12 hover:opacity-50 transition-opacity">
-          EventLab
+          Berlin_Events
         </Link>
 
         <h1 className="heading-section text-4xl mb-2">Log In</h1>

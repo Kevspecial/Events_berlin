@@ -18,7 +18,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-black uppercase tracking-tight mb-4">Acceptance of Terms</h2>
             <p className="text-sm text-black/60 leading-relaxed">
-              By accessing or using EventLab, you agree to be bound by these Terms of Service and all applicable laws and regulations.
+              By accessing or using Berlin_Events, you agree to be bound by these Terms of Service and all applicable laws and regulations.
             </p>
           </section>
 
@@ -32,7 +32,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-black uppercase tracking-tight mb-4">Event Bookings</h2>
             <p className="text-sm text-black/60 leading-relaxed">
-              All bookings are subject to availability. EventLab acts as a platform connecting event organizers with attendees.
+              All bookings are subject to availability. Berlin_Events acts as a platform connecting event organizers with attendees.
             </p>
           </section>
         </div>

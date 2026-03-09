@@ -86,7 +86,7 @@ body {
 <header className="fixed top-0 w-full bg-white z-50 border-b border-gray-200">
   <nav className="flex items-center justify-between px-8 py-4">
     {/* Logo */}
-    <div className="text-3xl font-black">EventLab</div>
+    <div className="text-3xl font-black">Berlin_Events</div>
     
     {/* Desktop Navigation */}
     <div className="hidden md:flex gap-8 items-center">

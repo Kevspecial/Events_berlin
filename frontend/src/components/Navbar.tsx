@@ -32,7 +32,7 @@ export default function Navbar() {
             href="/"
             className="text-2xl font-black tracking-tight uppercase hover:opacity-70 transition-opacity"
           >
-            BerlinEvents
+            Berlin_Events
           </Link>
 
           {/* Desktop Navigation */}

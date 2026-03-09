@@ -55,7 +55,7 @@ export default function Footer() {
                 href="/"
                 className="text-3xl font-black uppercase tracking-tight"
               >
-                EventLab
+                Berlin_Events
               </Link>
               <p className="mt-4 text-sm text-black/50 max-w-xs leading-relaxed">
                 Discover amazing events in Berlin. From concerts and festivals to
@@ -64,7 +64,7 @@ export default function Footer() {
             </div>
 
             <p className="text-xs font-bold uppercase tracking-wider text-black/40 mt-12">
-              &copy; {new Date().getFullYear()} EventLab Platform. All rights reserved.
+              &copy; {new Date().getFullYear()} Berlin_Events Platform. All rights reserved.
             </p>
           </div>
         </div>

@@ -16,7 +16,7 @@ export default function AboutPage() {
           <div>
             <h2 className="text-rotated heading-section text-3xl mb-6">Our Story</h2>
             <TextBlock
-              content="EventLab is Berlin's premier event discovery platform. We connect communities through curated cultural experiences, from art exhibitions to live performances."
+              content="Berlin_Events is Berlin's premier event discovery platform. We connect communities through curated cultural experiences, from art exhibitions to live performances."
               isUppercase
               isTight
               className="text-black/70 mb-6"

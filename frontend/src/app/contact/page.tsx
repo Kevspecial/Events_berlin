@@ -18,15 +18,15 @@ export default function ContactPage() {
           <div className="border border-black/10 p-8">
             <h2 className="text-lg font-black uppercase tracking-tight mb-4">Email Us</h2>
             <p className="text-sm text-black/60 mb-2">For general inquiries:</p>
-            <a href="mailto:hello@eventlab.berlin" className="text-base font-bold hover:underline">
-              hello@eventlab.berlin
+            <a href="mailto:hello@Berlin_Events.berlin" className="text-base font-bold hover:underline">
+              hello@Berlin_Events.berlin
             </a>
           </div>
 
           <div className="border border-black/10 p-8">
             <h2 className="text-lg font-black uppercase tracking-tight mb-4">Visit Us</h2>
             <p className="text-sm text-black/60">
-              EventLab HQ<br />
+              Berlin_Events HQ<br />
               Kreuzberg, Berlin<br />
               Germany
             </p>
