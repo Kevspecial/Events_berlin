@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/providers/AuthProvider';
+import { motion } from 'framer-motion';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,20 +41,31 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Log in</h1>
-        <p className="text-gray-600 mb-6">Welcome back! Please enter your details.</p>
+    <div className="min-h-screen flex items-center justify-center bg-white p-6">
+      <motion.div
+        className="w-full max-w-md"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Link href="/" className="block text-2xl font-black uppercase tracking-tight mb-12 hover:opacity-50 transition-opacity">
+          Berlin_Events
+        </Link>
+
+        <h1 className="heading-section text-4xl mb-2">Log In</h1>
+        <p className="text-sm font-bold uppercase tracking-wide text-black/50 mb-8">
+          Welcome back! Enter your details.
+        </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+          <div className="mb-6 p-4 border border-black/20 text-sm font-bold">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-black/50 mb-2">
               Email
             </label>
             <input
@@ -63,13 +75,13 @@ export default function LoginPage() {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+              className="w-full px-4 py-3 border border-black/10 text-sm font-medium focus:outline-none focus:border-black transition-colors bg-transparent"
               placeholder="Enter your email"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-black/50 mb-2">
               Password
             </label>
             <input
@@ -79,7 +91,7 @@ export default function LoginPage() {
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+              className="w-full px-4 py-3 border border-black/10 text-sm font-medium focus:outline-none focus:border-black transition-colors bg-transparent"
               placeholder="Enter your password"
             />
           </div>
@@ -87,19 +99,19 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white font-medium rounded-lg transition-colors"
+            className="w-full px-4 py-4 bg-black hover:bg-black/80 disabled:bg-black/30 text-white text-sm font-bold uppercase tracking-widest transition-colors"
           >
             {isLoading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
 
-        <p className="mt-6 text-sm text-gray-600 text-center">
+        <p className="mt-8 text-sm font-bold text-center">
           Don&apos;t have an account?{' '}
-          <Link href="/signup" className="text-orange-600 hover:text-orange-700 font-medium">
+          <Link href="/signup" className="underline decoration-2 underline-offset-4 hover:opacity-50 transition-opacity">
             Sign up
           </Link>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }

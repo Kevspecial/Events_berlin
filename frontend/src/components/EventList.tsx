@@ -1,5 +1,8 @@
+'use client';
+
 import { Event } from '@/types';
 import EventCard from './EventCard';
+import { motion } from 'framer-motion';
 
 interface EventListProps {
   events: Event[];
@@ -10,17 +13,12 @@ interface EventListProps {
 export default function EventList({ events, loading, error }: EventListProps) {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
-            <div className="h-48 bg-gray-300"></div>
-            <div className="p-6">
-              <div className="h-4 bg-gray-300 rounded mb-2"></div>
-              <div className="h-3 bg-gray-300 rounded mb-4"></div>
-              <div className="h-3 bg-gray-300 rounded mb-2"></div>
-              <div className="h-3 bg-gray-300 rounded mb-4"></div>
-              <div className="h-8 bg-gray-300 rounded"></div>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="aspect-[4/3] bg-black/5 mb-4" />
+            <div className="h-5 bg-black/5 mb-2 w-3/4" />
+            <div className="h-3 bg-black/5 w-1/2" />
           </div>
         ))}
       </div>
@@ -29,42 +27,62 @@ export default function EventList({ events, loading, error }: EventListProps) {
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <div className="text-red-600 mb-4">
-          <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-          </svg>
+      <div className="text-center py-20">
+        <div className="border border-black/10 p-10 max-w-md mx-auto">
+          <p className="text-3xl font-black mb-3">!</p>
+          <h3 className="text-lg font-black uppercase tracking-tight mb-2">
+            Error Loading Events
+          </h3>
+          <p className="text-sm text-black/50 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-black text-white px-6 py-2.5 text-sm font-bold uppercase tracking-wide hover:bg-black/80 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
-        <p className="text-gray-600">{error}</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-        >
-          Try Again
-        </button>
       </div>
     );
   }
 
   if (!events || events.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-gray-400 mb-4">
-          <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
+      <div className="text-center py-20">
+        <div className="border border-black/10 p-10 max-w-md mx-auto">
+          <p className="text-4xl mb-4">&#8709;</p>
+          <h3 className="text-lg font-black uppercase tracking-tight mb-2">
+            No Events Found
+          </h3>
+          <p className="text-sm text-black/50">
+            Try adjusting your search criteria or check back later for new events.
+          </p>
         </div>
-        <p className="text-gray-600 mb-4">No events found</p>
-        <p className="text-gray-500 text-sm">Try adjusting your search criteria or create a new event.</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <motion.div
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: {},
+        visible: { transition: { staggerChildren: 0.06 } },
+      }}
+    >
       {events.map((event) => (
-        <EventCard key={event.id} event={event} />
+        <motion.div
+          key={event.id}
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 },
+          }}
+          transition={{ duration: 0.4 }}
+        >
+          <EventCard event={event} />
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }

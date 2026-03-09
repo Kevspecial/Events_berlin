@@ -8,16 +8,35 @@ class Booking < ApplicationRecord
   validates :quantity, presence: true, numericality: { greater_than: 0, only_integer: true }
   validates :total_price, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :status, presence: true, inclusion: { in: %w[pending confirmed cancelled] }
+  validates :payment_status, inclusion: { in: %w[unpaid paid failed refunded] }, allow_nil: true
 
   before_validation :calculate_total_price, if: :quantity_changed?
 
   scope :confirmed, -> { where(status: 'confirmed') }
   scope :pending, -> { where(status: 'pending') }
   scope :cancelled, -> { where(status: 'cancelled') }
+  scope :paid, -> { where(payment_status: 'paid') }
+
+  # Status check methods
+  def pending?
+    status == 'pending'
+  end
+
+  def confirmed?
+    status == 'confirmed'
+  end
+
+  def cancelled?
+    status == 'cancelled'
+  end
+
+  def paid?
+    payment_status == 'paid'
+  end
 
   # Define searchable attributes for Ransack (used by Active Admin)
   def self.ransackable_attributes(_auth_object = nil)
-    %w[created_at id quantity status total_price updated_at]
+    %w[created_at id quantity status payment_status total_price updated_at stripe_checkout_session_id]
   end
 
   # Define searchable associations for Ransack

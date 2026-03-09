@@ -1,49 +1,71 @@
 'use client';
 
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 export default function HeroSection() {
   return (
-    <section className="relative bg-gradient-to-r from-orange-500 to-red-500 text-white">
-      <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+    <section className="relative bg-white pt-28 pb-20 px-6 lg:px-10 overflow-hidden">
+      <div className="max-w-[1400px] mx-auto">
+        {/* Asymmetric grid layout */}
+        <div className="grid grid-cols-12 gap-4 lg:gap-8 items-end">
+          {/* Main heading */}
+          <motion.div
+            className="col-span-12 lg:col-span-8"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <h1 className="heading-display text-[clamp(3.5rem,10vw,8rem)] leading-[0.85]">
+              Discover
+              <br />
+              <span className="italic font-black">Events</span>
+            </h1>
+          </motion.div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
-        <div className="text-center">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-            Discover events that
-            <span className="block text-orange-200">move you</span>
-          </h1>
-
-          <p className="text-xl md:text-2xl lg:text-3xl mb-8 text-orange-100 max-w-3xl mx-auto leading-relaxed">
-            From concerts and festivals to workshops and networking events,
-            find your next unforgettable experience in Berlin.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link
-              href="/events"
-              className="bg-white text-orange-600 hover:bg-gray-50 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
-            >
-              Browse Events
-            </Link>
-            <Link
-              href="/events/create"
-              className="border-2 border-white text-white hover:bg-white hover:text-orange-600 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200"
-            >
-              Create Your Event
-            </Link>
-          </div>
-
-          <div className="mt-12 text-orange-200">
-            <p className="text-lg">
-              Join thousands of event-goers and organizers in Berlin
+          {/* Rotated subheading */}
+          <motion.div
+            className="col-span-12 lg:col-span-4 lg:pb-4"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <p className="text-editorial text-sm lg:text-base max-w-xs">
+              We create the next level of cultural experiences. From art exhibitions to live performances.
             </p>
-          </div>
+          </motion.div>
         </div>
-      </div>
 
-      {/* Decorative elements */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent"></div>
+        {/* CTA Row */}
+        <motion.div
+          className="mt-12 lg:mt-16 flex flex-col sm:flex-row gap-4 items-start"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <Link
+            href="/events"
+            className="bg-black text-white px-8 py-4 text-sm font-bold uppercase tracking-widest hover:bg-black/80 transition-colors"
+          >
+            Browse Events
+          </Link>
+          <Link
+            href="/events/create"
+            className="border-2 border-black text-black px-8 py-4 text-sm font-bold uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
+          >
+            Create Event
+          </Link>
+        </motion.div>
+
+        {/* Decorative line */}
+        <motion.div
+          className="mt-16 lg:mt-20 h-px bg-black/15 w-full"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          style={{ transformOrigin: 'left' }}
+        />
+      </div>
     </section>
   );
 }

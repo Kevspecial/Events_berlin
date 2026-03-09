@@ -3,103 +3,189 @@
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import EventCard from '@/components/EventCard';
+import Footer from '@/components/Footer';
+import TextBlock from '@/components/TextBlock';
 import { useEvents } from '@/hooks/useEvents';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 export default function Home() {
   const { data: eventsData, isLoading, error } = useEvents({ per_page: 8 });
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Navbar />
       <HeroSection />
 
       {/* Featured Events Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Featured Events
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Discover the most popular events happening in Berlin this week
-            </p>
-          </div>
+      <section className="py-16 lg:py-24 px-6 lg:px-10">
+        <div className="max-w-[1400px] mx-auto">
+          {/* Section header */}
+          <motion.div
+            className="flex items-end justify-between mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <div>
+              <h2 className="heading-section">Featured Events</h2>
+              <p className="mt-3 text-sm text-black/50 uppercase tracking-wide font-bold">
+                The most popular events happening now
+              </p>
+            </div>
+            <Link
+              href="/events"
+              className="hidden sm:block text-sm font-bold uppercase tracking-wide border-b-2 border-black pb-1 hover:opacity-50 transition-opacity"
+            >
+              View All
+            </Link>
+          </motion.div>
 
-          {/* Events area */}
+          {/* Events grid */}
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 animate-pulse">
-                  <div className="h-48 bg-gray-200" />
-                  <div className="p-6">
-                    <div className="h-4 bg-gray-200 rounded mb-2" />
-                    <div className="h-3 bg-gray-200 rounded mb-4" />
-                    <div className="h-3 bg-gray-200 rounded w-3/4" />
-                  </div>
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-[4/3] bg-black/5 mb-4" />
+                  <div className="h-5 bg-black/5 mb-2 w-3/4" />
+                  <div className="h-3 bg-black/5 w-1/2" />
                 </div>
               ))}
             </div>
           ) : error ? (
-            <div className="text-center py-12">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-auto">
-                <div className="text-red-400 text-4xl mb-4">⚠️</div>
-                <h3 className="text-lg font-semibold text-red-900 mb-2">Error Loading Featured Events</h3>
-                <p className="text-red-600">{(error as any).message || 'Please try again.'}</p>
+            <div className="text-center py-16">
+              <div className="border border-black/10 p-10 max-w-md mx-auto">
+                <p className="text-3xl font-black mb-3">!</p>
+                <h3 className="text-base font-black uppercase tracking-tight mb-2">
+                  Error Loading Events
+                </h3>
+                <p className="text-sm text-black/50">
+                  {(error as Error).message || 'Please try again.'}
+                </p>
               </div>
             </div>
           ) : eventsData && eventsData.data && eventsData.data.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={{
+                hidden: {},
+                visible: { transition: { staggerChildren: 0.08 } },
+              }}
+            >
               {eventsData.data.slice(0, 8).map((event) => (
-                <EventCard key={event.id} event={event} />
+                <motion.div
+                  key={event.id}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 },
+                  }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <EventCard event={event} />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           ) : (
-            <div className="text-center py-12">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md mx-auto">
-                <div className="text-gray-400 text-4xl mb-4">🔍</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Featured Events</h3>
-                <p className="text-gray-600">Please check back later or browse all events.</p>
+            <div className="text-center py-16">
+              <div className="border border-black/10 p-10 max-w-md mx-auto">
+                <p className="text-4xl mb-4">&#8709;</p>
+                <h3 className="text-base font-black uppercase tracking-tight mb-2">
+                  No Featured Events
+                </h3>
+                <p className="text-sm text-black/50">
+                  Check back later or browse all events.
+                </p>
               </div>
             </div>
           )}
+
+          {/* Mobile "View All" link */}
+          <div className="sm:hidden mt-10 text-center">
+            <Link
+              href="/events"
+              className="text-sm font-bold uppercase tracking-wide border-b-2 border-black pb-1"
+            >
+              View All Events
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="col-span-1 md:col-span-2">
-              <div className="text-2xl font-bold text-orange-500 mb-4">Evently</div>
-              <p className="text-gray-300 mb-4">
-                Discover amazing events in Berlin. From concerts and festivals to workshops and networking events.
-              </p>
-            </div>
+      {/* Mission Section */}
+      <section className="py-16 lg:py-24 px-6 lg:px-10 border-t border-black/10">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
+            {/* Left Column */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-rotated heading-section text-[clamp(2.5rem,5vw,4rem)] mb-8">
+                Our Mission
+              </h2>
 
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-              <ul className="space-y-2 text-gray-300">
-                <li><a href="/events" className="hover:text-orange-400 transition-colors">Browse Events</a></li>
-                <li><a href="/events/create" className="hover:text-orange-400 transition-colors">Create Event</a></li>
-                <li><a href="/about" className="hover:text-orange-400 transition-colors">About Us</a></li>
-                <li><a href="/contact" className="hover:text-orange-400 transition-colors">Contact</a></li>
-              </ul>
-            </div>
+              <TextBlock
+                content="We create inspiring events combined with art and culture. An effective form of involving people in creative expression through modern digital experiences."
+                isUppercase
+                isTight
+                className="text-black/70 mb-6"
+              />
 
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-gray-300">
-                <li><a href="/help" className="hover:text-orange-400 transition-colors">Help Center</a></li>
-                <li><a href="/terms" className="hover:text-orange-400 transition-colors">Terms of Service</a></li>
-                <li><a href="/privacy" className="hover:text-orange-400 transition-colors">Privacy Policy</a></li>
-              </ul>
-            </div>
-          </div>
+              <TextBlock
+                content="Bringing together communities through curated cultural experiences, festivals, museum collections, and live performances since 2022."
+                isUppercase
+                isTight
+                className="text-black/40"
+              />
+            </motion.div>
 
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 Evently. All rights reserved.</p>
+            {/* Right Column */}
+            <motion.div
+              className="flex flex-col gap-8"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              viewport={{ once: true }}
+            >
+              {/* Stat cards */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="border border-black/10 p-6">
+                  <p className="text-4xl font-black mb-1">500+</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-black/50">
+                    Events Hosted
+                  </p>
+                </div>
+                <div className="border border-black/10 p-6">
+                  <p className="text-4xl font-black mb-1">10K+</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-black/50">
+                    Attendees
+                  </p>
+                </div>
+                <div className="border border-black/10 p-6">
+                  <p className="text-4xl font-black mb-1">50+</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-black/50">
+                    Venues
+                  </p>
+                </div>
+                <div className="border border-black/10 p-6">
+                  <p className="text-4xl font-black mb-1">Berlin</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-black/50">
+                    Based In
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
-      </footer>
+      </section>
+
+      <Footer />
     </div>
   );
 }

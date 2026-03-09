@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_19_144946) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_08_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -86,8 +86,14 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_19_144946) do
     t.string "status", default: "pending", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "stripe_checkout_session_id"
+    t.string "stripe_payment_intent_id"
+    t.string "payment_status", default: "unpaid"
+    t.datetime "paid_at"
     t.index ["event_id"], name: "index_bookings_on_event_id"
     t.index ["status"], name: "index_bookings_on_status"
+    t.index ["stripe_checkout_session_id"], name: "index_bookings_on_stripe_checkout_session_id", unique: true
+    t.index ["stripe_payment_intent_id"], name: "index_bookings_on_stripe_payment_intent_id"
     t.index ["ticket_type_id"], name: "index_bookings_on_ticket_type_id"
     t.index ["user_id", "event_id"], name: "index_bookings_on_user_id_and_event_id"
     t.index ["user_id"], name: "index_bookings_on_user_id"
