@@ -2,13 +2,27 @@
 
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/providers/AuthProvider';
 import { eventService } from '@/services/eventService';
 import type { CreateEventForm } from '@/types';
 import { motion } from 'framer-motion';
 import { Upload, Check } from 'lucide-react';
 
 export default function CreateEventPage() {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && (!isAuthenticated || (user?.role !== 'organizer' && user?.role !== 'admin'))) {
+      router.replace('/events');
+    }
+  }, [isLoading, isAuthenticated, user, router]);
+
+  if (isLoading || !isAuthenticated || (user?.role !== 'organizer' && user?.role !== 'admin')) {
+    return null;
+  }
   const [form, setForm] = useState<CreateEventForm>({
     name: '',
     description: '',

@@ -6,14 +6,16 @@ import { useAuth } from '@/providers/AuthProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 
-const navLinks = [
-  { label: 'Events', href: '/events' },
-  { label: 'Create Event', href: '/events/create' },
-  { label: 'About', href: '/about' },
-];
-
 export default function Navbar() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+
+  const canCreateEvent = user?.role === 'organizer' || user?.role === 'admin';
+
+  const navLinks = [
+    { label: 'Events', href: '/events' },
+    ...(canCreateEvent ? [{ label: 'Create Event', href: '/events/create' }] : []),
+    { label: 'About', href: '/about' },
+  ];
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
