@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
@@ -8,7 +8,7 @@ import Footer from '@/components/Footer';
 import { motion } from 'framer-motion';
 import { Check, Calendar, ArrowRight } from 'lucide-react';
 
-export default function CheckoutSuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [isLoading, setIsLoading] = useState(true);
@@ -87,5 +87,13 @@ export default function CheckoutSuccessPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense>
+      <SuccessContent />
+    </Suspense>
   );
 }
