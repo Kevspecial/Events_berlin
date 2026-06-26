@@ -10,8 +10,17 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Events Berlin - Discover Amazing Events",
-  description: "Find and book the best events in Berlin. From tech meetups to cultural festivals.",
+  title: {
+    default: 'Events Berlin — Discover Local Events',
+    template: '%s | Events Berlin',
+  },
+  description: 'Discover and book the best events in Berlin — cultural, professional, and community events all in one place.',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://events-berlin-frontend.fly.dev'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_DE',
+    siteName: 'Events Berlin',
+  },
 };
 
 export default function RootLayout({
