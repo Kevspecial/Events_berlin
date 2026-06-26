@@ -66,9 +66,21 @@ Rails.application.configure do
 
   config.action_mailer.perform_caching = false
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address: 'smtp.sendgrid.net',
+    port: 587,
+    domain: ENV.fetch('MAILER_DOMAIN', 'events-berlin.de'),
+    user_name: 'apikey',
+    password: ENV.fetch('SENDGRID_API_KEY', ''),
+    authentication: :plain,
+    enable_starttls_auto: true
+  }
+  config.action_mailer.default_url_options = {
+    host: ENV.fetch('FRONTEND_URL', 'https://events-berlin-frontend.fly.dev')
+  }
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.perform_deliveries = true
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
