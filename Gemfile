@@ -63,6 +63,11 @@ gem 'stripe', '~> 10.0'
 gem 'cloudinary', '~> 1.28'
 gem 'activestorage-cloudinary-service', '~> 0.2'
 
+# Error monitoring with Sentry
+gem 'sentry-ruby', '~> 5.0'
+gem 'sentry-rails', '~> 5.0'
+gem 'sentry-sidekiq', '~> 5.0'
+
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
 
