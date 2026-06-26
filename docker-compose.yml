@@ -1,8 +1,6 @@
-
-
 services:
   db:
-    image: postgres:12.5-alpine
+    image: postgres:14-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -11,6 +9,13 @@ services:
       POSTGRES_DB: event_berlin_development
     ports:
       - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
 
   web:
     build: .
@@ -21,11 +26,26 @@ services:
       - "3000:3000"
     depends_on:
       - db
+      - redis
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/event_berlin_development
       RAILS_ENV: development
       RAILS_LOG_TO_STDOUT: "true"
       RAILS_SERVE_STATIC_FILES: "true"
+      REDIS_URL: redis://redis:6379/0
+
+  worker:
+    build: .
+    command: bundle exec sidekiq
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/event_berlin_development
+      RAILS_ENV: development
+      REDIS_URL: redis://redis:6379/0
 
   frontend:
     build:
@@ -33,7 +53,7 @@ services:
       dockerfile: Dockerfile
     command: npm run dev -- --hostname 0.0.0.0 --port 3001
     ports:
-      - "3001:3001" # Browser on 3001 -> container 3001
+      - "3001:3001"
     depends_on:
       - web
     environment:
@@ -45,3 +65,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:

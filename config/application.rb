@@ -27,6 +27,9 @@ module Eventsberlin
     # Add session store configuration
     config.session_store :cookie_store, key: '_events_berlin_session'
 
+    # Configure Active Job to use Sidekiq
+    config.active_job.queue_adapter = :sidekiq
+
     # Ensure we have the necessary middleware for Active Admin
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore
