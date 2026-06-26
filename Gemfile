@@ -21,6 +21,7 @@ gem 'turbo-rails'
 gem 'stimulus-rails'
 
 gem 'rack-cors'
+gem 'rack-attack', '~> 6.7'
 # Ensure rack is updated to mitigate known multipart/parser vulnerabilities
 gem 'rack', '>= 3.1.18'
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem

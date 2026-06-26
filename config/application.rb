@@ -33,5 +33,8 @@ module Eventsberlin
     # Ensure we have the necessary middleware for Active Admin
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore
+
+    # Rate limiting middleware
+    config.middleware.use Rack::Attack
   end
 end
