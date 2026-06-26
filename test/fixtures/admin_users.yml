@@ -5,7 +5,9 @@
 # below each fixture, per the syntax in the comments below
 #
 one:
-	email: admin1@example.com
+  email: admin1@example.com
+  encrypted_password: "$2a$04$A4xnw43hX1rCEDeKiukqgeQEKxvB8pHB8TsTf6V4Vm60GIgOKmEwK"
 
 two:
-	email: admin2@example.com
+  email: admin2@example.com
+  encrypted_password: "$2a$04$A4xnw43hX1rCEDeKiukqgeQEKxvB8pHB8TsTf6V4Vm60GIgOKmEwK"

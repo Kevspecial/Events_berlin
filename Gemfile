@@ -31,6 +31,8 @@ gem 'bootsnap', require: false
 
 # Devise is a flexible authentication solution for Rails
 gem 'devise', '~> 4.9', '>= 4.9.3'
+gem 'devise-jwt', '~> 0.11.0'
+gem 'redis', '~> 5.0'
 
 # Active Admin for administration interface
 gem 'activeadmin'

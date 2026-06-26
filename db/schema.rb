@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_08_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_26_144322) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -134,6 +134,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_08_000001) do
     t.index ["event_id"], name: "index_invites_on_event_id"
     t.index ["invitee_id"], name: "index_invites_on_invitee_id"
     t.index ["inviter_id"], name: "index_invites_on_inviter_id"
+  end
+
+  create_table "jwt_denylists", force: :cascade do |t|
+    t.string "jti", null: false
+    t.datetime "exp", null: false
+    t.index ["jti"], name: "index_jwt_denylists_on_jti"
   end
 
   create_table "ticket_types", force: :cascade do |t|
