@@ -12,6 +12,9 @@ Rails.application.routes.draw do
   get '/health', to: 'health#show'
   get '/up', to: 'health#show'
 
+  # CSP violation reporting endpoint
+  post '/csp-violation-report', to: proc { [204, {}, []] }
+
   resources :events
   resources :users, only: [:show]
   resources :attendances, only: %i[create destroy]
