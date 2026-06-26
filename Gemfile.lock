@@ -80,6 +80,7 @@ GEM
       activerecord (= 7.1.5.2)
       activesupport (= 7.1.5.2)
       marcel (~> 1.0)
+    activestorage-cloudinary-service (0.2.3)
     activesupport (7.1.5.2)
       base64
       benchmark (>= 0.3)
@@ -99,6 +100,7 @@ GEM
       activesupport (>= 3.0.0)
       ruby2_keywords (>= 0.0.2)
     ast (2.4.3)
+    aws_cf_signer (0.1.3)
     base64 (0.3.0)
     bcrypt (3.1.20)
     benchmark (0.5.0)
@@ -125,6 +127,9 @@ GEM
       activesupport
     childprocess (5.1.0)
       logger (~> 1.5)
+    cloudinary (1.29.0)
+      aws_cf_signer
+      rest-client (>= 2.0.0)
     coderay (1.1.3)
     concurrent-ruby (1.3.5)
     connection_pool (2.5.4)
@@ -143,6 +148,7 @@ GEM
     devise-jwt (0.11.0)
       devise (~> 4.0)
       warden-jwt_auth (~> 0.8)
+    domain_name (0.6.20240107)
     drb (2.2.3)
     dry-auto_inject (1.1.0)
       dry-core (~> 1.1)
@@ -187,6 +193,9 @@ GEM
     has_scope (0.9.0)
       actionpack (>= 7.0)
       activesupport (>= 7.0)
+    http-accept (1.7.0)
+    http-cookie (1.1.6)
+      domain_name (~> 0.5)
     http_parser.rb (0.8.0)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
@@ -255,6 +264,10 @@ GEM
     marcel (1.1.0)
     matrix (0.4.3)
     method_source (1.1.0)
+    mime-types (3.7.0)
+      logger
+      mime-types-data (~> 3.2025, >= 3.2025.0507)
+    mime-types-data (3.2026.0414)
     mini_magick (5.3.1)
       logger
     mini_mime (1.1.5)
@@ -272,6 +285,7 @@ GEM
       timeout
     net-smtp (0.5.1)
       net-protocol
+    netrc (0.11.0)
     nio4r (2.7.4)
     nokogiri (1.18.10-x86_64-linux-gnu)
       racc (~> 1.4)
@@ -366,6 +380,11 @@ GEM
     responders (3.1.1)
       actionpack (>= 5.2)
       railties (>= 5.2)
+    rest-client (2.1.0)
+      http-accept (>= 1.7.0, < 2.0)
+      http-cookie (>= 1.0.2, < 2.0)
+      mime-types (>= 1.16, < 4.0)
+      netrc (~> 0.8)
     rexml (3.4.4)
     rubocop (1.78.0)
       json (~> 2.3)
@@ -477,10 +496,12 @@ PLATFORMS
 DEPENDENCIES
   active_model_serializers (~> 0.10.0)
   activeadmin
+  activestorage-cloudinary-service (~> 0.2)
   bootsnap
   brakeman
   bundler-audit
   capybara
+  cloudinary (~> 1.28)
   debug
   devise (~> 4.9, >= 4.9.3)
   devise-jwt (~> 0.11.0)

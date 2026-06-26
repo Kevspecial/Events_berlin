@@ -59,6 +59,10 @@ gem 'image_processing', '~> 1.2'
 # Stripe for payment processing
 gem 'stripe', '~> 10.0'
 
+# Cloudinary for Active Storage
+gem 'cloudinary', '~> 1.28'
+gem 'activestorage-cloudinary-service', '~> 0.2'
+
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
 

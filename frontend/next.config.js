@@ -9,6 +9,10 @@ const nextConfig = {
         port: '3000',
         pathname: '/rails/active_storage/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
     ],
   },
   async rewrites() {
