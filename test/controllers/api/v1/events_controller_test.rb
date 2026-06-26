@@ -35,6 +35,17 @@ module Api
 
         assert_response :created
       end
+
+      test 'index returns paginated events with meta' do
+        get api_v1_events_url, as: :json
+        assert_response :success
+        body = JSON.parse(response.body)
+        assert body.key?('events'), "Response should include 'events' key"
+        assert body.key?('meta'), "Response should include 'meta' key"
+        assert body['meta'].key?('count'), "Meta should include 'count' key"
+        assert body['meta'].key?('page'), "Meta should include 'page' key"
+        assert body['meta'].key?('pages'), "Meta should include 'pages' key"
+      end
     end
   end
 end

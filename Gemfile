@@ -59,6 +59,9 @@ gem 'image_processing', '~> 1.2'
 # Stripe for payment processing
 gem 'stripe', '~> 10.0'
 
+# Pagination
+gem 'pagy', '~> 8.0'
+
 # Cloudinary for Active Storage
 gem 'cloudinary', '~> 1.28'
 gem 'activestorage-cloudinary-service', '~> 0.2'
