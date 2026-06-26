@@ -77,6 +77,13 @@ export default function Navbar() {
                         <p className="text-xs text-black/50 uppercase tracking-wider">Signed in as</p>
                         <p className="text-sm font-bold truncate mt-1">{user.email}</p>
                       </div>
+                      <Link
+                        href="/profile"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="block w-full text-left px-4 py-3 text-sm font-bold uppercase tracking-wide hover:bg-black hover:text-white transition-colors"
+                      >
+                        Profile
+                      </Link>
                       <button
                         onClick={handleLogout}
                         className="w-full text-left px-4 py-3 text-sm font-bold uppercase tracking-wide hover:bg-black hover:text-white transition-colors"
@@ -146,6 +153,13 @@ export default function Navbar() {
                       <p className="text-xs text-black/50 uppercase tracking-wider">Signed in as</p>
                       <p className="text-sm font-bold mt-1">{user.email}</p>
                     </div>
+                    <Link
+                      href="/profile"
+                      className="block py-3 text-lg font-black uppercase tracking-tight hover:opacity-50 transition-opacity"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Profile
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left py-3 text-lg font-black uppercase tracking-tight hover:opacity-50 transition-opacity"
