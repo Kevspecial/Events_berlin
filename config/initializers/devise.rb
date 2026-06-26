@@ -317,10 +317,16 @@ Devise.setup do |config|
 
   # ==> Configuration for devise-jwt
   config.jwt do |jwt|
-    jwt.secret = ENV.fetch('DEVISE_JWT_SECRET_KEY') { SecureRandom.hex(64) }
-    jwt.dispatch_requests = [
-      ['POST', %r{^/api/v1/login$}]
-    ]
+    jwt.secret = if Rails.env.production? || Rails.env.staging?
+      ENV.fetch('DEVISE_JWT_SECRET_KEY')
+    else
+      ENV.fetch('DEVISE_JWT_SECRET_KEY') { SecureRandom.hex(64) }
+    end
+    # dispatch_requests intentionally omitted: tokens are issued manually by
+    # SessionsController via Warden::JWTAuth::UserEncoder so that the token is
+    # returned in the JSON body (used by the frontend). Adding dispatch_requests
+    # here would also emit a second token in the Authorization response header —
+    # an orphaned token that is never revoked until expiry.
     jwt.revocation_requests = [
       ['DELETE', %r{^/api/v1/logout$}]
     ]

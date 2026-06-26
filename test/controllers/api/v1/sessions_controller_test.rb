@@ -62,6 +62,23 @@ module Api
         parts = token.split('.')
         assert_equal 3, parts.length, "Token should be a JWT with 3 parts (header.payload.signature)"
       end
+
+      test 'token from login authenticates subsequent requests' do
+        post api_v1_login_url,
+             params: { email: 'test@example.com', password: 'password123' },
+             as: :json
+
+        assert_response :ok
+        token = response.parsed_body['token']
+        assert_not_empty token, "Expected a token in the login response"
+
+        get api_v1_events_url,
+            headers: { 'Authorization' => "Bearer #{token}" },
+            as: :json
+
+        assert_not_equal 401, response.status,
+          "Expected authenticated request to /api/v1/events to succeed, got #{response.status}"
+      end
     end
   end
 end
