@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import { User } from '@/types';
+import type { User, Event } from '@/types';
 
 export const userService = {
   // Get user profile
