@@ -2,8 +2,12 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/providers/AuthProvider';
 
 export default function HeroSection() {
+  const { user } = useAuth();
+  const canCreateEvent = user?.role === 'organizer' || user?.role === 'admin';
+
   return (
     <section className="relative bg-white pt-28 pb-20 px-6 lg:px-10 overflow-hidden">
       <div className="max-w-[1400px] mx-auto">
@@ -49,12 +53,14 @@ export default function HeroSection() {
           >
             Browse Events
           </Link>
-          <Link
-            href="/events/create"
-            className="border-2 border-black text-black px-8 py-4 text-sm font-bold uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
-          >
-            Create Event
-          </Link>
+          {canCreateEvent && (
+            <Link
+              href="/events/create"
+              className="border-2 border-black text-black px-8 py-4 text-sm font-bold uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
+            >
+              Create Event
+            </Link>
+          )}
         </motion.div>
 
         {/* Decorative line */}

@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import { Event, CreateEventForm, PaginatedResponse, ApiResponse } from '@/types';
+import { Event, Category, Venue, CreateEventForm, PaginatedResponse, ApiResponse } from '@/types';
 
 export const eventService = {
   // Get all events
@@ -48,9 +48,9 @@ export const eventService = {
     Object.entries(eventData).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         if (key === 'image' && value instanceof File) {
-          formData.append(key, value);
+          formData.append(`event[${key}]`, value);
         } else {
-          formData.append(key, value.toString());
+          formData.append(`event[${key}]`, value.toString());
         }
       }
     });
@@ -84,5 +84,17 @@ export const eventService = {
   searchEvents: async (query: string): Promise<Event[]> => {
     const response = await api.get(`/events?search=${encodeURIComponent(query)}`);
     return Array.isArray(response.data) ? response.data : response.data.events;
+  },
+
+  // Get all categories
+  getCategories: async (): Promise<Category[]> => {
+    const response = await api.get('/categories');
+    return response.data;
+  },
+
+  // Get all venues
+  getVenues: async (): Promise<Venue[]> => {
+    const response = await api.get('/venues');
+    return response.data;
   },
 };

@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
@@ -7,7 +8,7 @@ import Footer from '@/components/Footer';
 import { motion } from 'framer-motion';
 import { X, ArrowLeft, RefreshCw } from 'lucide-react';
 
-export default function CheckoutCancelPage() {
+function CancelContent() {
   const searchParams = useSearchParams();
   const bookingId = searchParams.get('booking_id');
 
@@ -37,7 +38,7 @@ export default function CheckoutCancelPage() {
           </h1>
           
           <p className="text-black/60 mb-8 max-w-md mx-auto">
-            Your payment was cancelled. Don't worry — your booking is still saved and you can complete the payment when you're ready.
+            Your payment was cancelled. Don&apos;t worry — your booking is still saved and you can complete the payment when you&apos;re ready.
           </p>
 
           <div className="border-t border-black/10 pt-8 space-y-4">
@@ -67,7 +68,7 @@ export default function CheckoutCancelPage() {
               Need Help?
             </h3>
             <p className="text-sm text-black/60">
-              If you're experiencing issues with payment, please contact our support team at{' '}
+              If you&apos;re experiencing issues with payment, please contact our support team at{' '}
               <a href="mailto:support@eventsberlin.com" className="underline hover:no-underline">
                 support@eventsberlin.com
               </a>
@@ -78,5 +79,13 @@ export default function CheckoutCancelPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function CheckoutCancelPage() {
+  return (
+    <Suspense>
+      <CancelContent />
+    </Suspense>
   );
 }

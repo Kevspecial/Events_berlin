@@ -33,6 +33,9 @@ Rails.application.routes.draw do
         resources :bookings, only: [:create]
       end
 
+      resources :categories, only: [:index]
+      resources :venues, only: [:index]
+
       resources :bookings, only: %i[index show update] do
         member do
           patch :cancel

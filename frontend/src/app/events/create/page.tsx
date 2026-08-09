@@ -2,13 +2,20 @@
 
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/providers/AuthProvider';
 import { eventService } from '@/services/eventService';
-import type { CreateEventForm } from '@/types';
+import type { CreateEventForm, Category, Venue } from '@/types';
 import { motion } from 'framer-motion';
 import { Upload, Check } from 'lucide-react';
 
 export default function CreateEventPage() {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
   const [form, setForm] = useState<CreateEventForm>({
     name: '',
     description: '',
@@ -20,6 +27,21 @@ export default function CreateEventPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isLoading && (!isAuthenticated || (user?.role !== 'organizer' && user?.role !== 'admin'))) {
+      router.replace('/events');
+    }
+  }, [isLoading, isAuthenticated, user, router]);
+
+  useEffect(() => {
+    eventService.getCategories().then(setCategories).catch(() => {});
+    eventService.getVenues().then(setVenues).catch(() => {});
+  }, []);
+
+  if (isLoading || !isAuthenticated || (user?.role !== 'organizer' && user?.role !== 'admin')) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,6 +160,39 @@ export default function CreateEventPage() {
                   className="w-full border border-black/10 px-4 py-3 text-sm font-medium focus:outline-none focus:border-black transition-colors bg-transparent"
                   placeholder="Max attendees"
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-black/50 mb-2">
+                  Category
+                </label>
+                <select
+                  value={form.category_id ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value ? Number(e.target.value) : undefined }))}
+                  className="w-full border border-black/10 px-4 py-3 text-sm font-medium focus:outline-none focus:border-black transition-colors bg-transparent"
+                >
+                  <option value="">Select a category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-black/50 mb-2">
+                  Venue
+                </label>
+                <select
+                  value={form.venue_id ?? ''}
+                  onChange={(e) => setForm((f) => ({ ...f, venue_id: e.target.value ? Number(e.target.value) : undefined }))}
+                  className="w-full border border-black/10 px-4 py-3 text-sm font-medium focus:outline-none focus:border-black transition-colors bg-transparent"
+                >
+                  <option value="">Select a venue</option>
+                  {venues.map((v) => (
+                    <option key={v.id} value={v.id}>{v.name} — {v.address}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
