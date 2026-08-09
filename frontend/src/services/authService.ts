@@ -87,8 +87,13 @@ export const authService = {
         password,
       });
 
-      const backendUser = response.data;
-      
+      const { token, user: backendUser } = response.data;
+
+      // Store JWT token so api.ts interceptor sends Authorization: Bearer <token>
+      if (typeof window !== 'undefined' && token) {
+        localStorage.setItem('authToken', token);
+      }
+
       // Create AuthUser (name will be empty for backend-only users)
       const authUser: AuthUser = {
         id: String(backendUser.id),
@@ -113,6 +118,9 @@ export const authService = {
       await api.delete('/logout');
     } catch {
       // Ignore logout errors
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authToken');
     }
     authService.setCurrentUser(null);
   },

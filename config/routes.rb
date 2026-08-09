@@ -8,6 +8,13 @@ Rails.application.routes.draw do
   # Backend root - redirect to ActiveAdmin dashboard
   root to: redirect('/admin')
 
+  # Health check endpoints for container orchestrators
+  get '/health', to: 'health#show'
+  get '/up', to: 'health#show'
+
+  # CSP violation reporting endpoint
+  post '/csp-violation-report', to: proc { [204, {}, []] }
+
   resources :events
   resources :users, only: [:show]
   resources :attendances, only: %i[create destroy]

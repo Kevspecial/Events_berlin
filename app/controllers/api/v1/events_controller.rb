@@ -3,19 +3,26 @@
 module Api
   module V1
     class EventsController < BaseController
+      include Pagy::Backend
+
       skip_before_action :authenticate_user!, only: %i[index show]
 
       # rubocop:disable Metrics/AbcSize
       def index
-        @events = Event.all
-                       .by_category(params[:category_id])
-                       .by_location(params[:location])
-                       .by_date_range(params[:start_date], params[:end_date])
-                       .search_by_name(params[:search])
+        events = Event.all
+                      .by_category(params[:category_id])
+                      .by_location(params[:location])
+                      .by_date_range(params[:start_date], params[:end_date])
+                      .search_by_name(params[:search])
 
-        @events = params[:upcoming] == 'true' ? @events.upcoming : @events
+        events = params[:upcoming] == 'true' ? events.upcoming : events
 
-        render json: @events, include: %i[category venue creator]
+        @pagy, @events = pagy(events)
+
+        render json: {
+          events: ActiveModelSerializers::SerializableResource.new(@events, include: %i[category venue creator]),
+          meta: pagy_metadata(@pagy)
+        }
       end
       # rubocop:enable Metrics/AbcSize
 

@@ -10,7 +10,7 @@ export const eventService = {
     category?: string;
   }): Promise<PaginatedResponse<Event>> => {
     const response = await api.get('/events', { params });
-    // Handle the case where the API returns just an array of events
+    // Handle the case where the API returns just an array of events (legacy)
     if (Array.isArray(response.data)) {
       return {
         data: response.data,
@@ -22,7 +22,17 @@ export const eventService = {
         },
       };
     }
-    return response.data;
+    // Handle pagy paginated response: { events: [...], meta: { page, pages, count, limit, ... } }
+    const { events, meta: pagyMeta } = response.data;
+    return {
+      data: events,
+      meta: {
+        current_page: pagyMeta.page ?? 1,
+        total_pages: pagyMeta.pages ?? 1,
+        total_count: pagyMeta.count ?? 0,
+        per_page: pagyMeta.limit ?? 20,
+      },
+    };
   },
 
   // Get single event
@@ -67,12 +77,12 @@ export const eventService = {
   // Get events by category
   getEventsByCategory: async (categoryId: number): Promise<Event[]> => {
     const response = await api.get(`/events?category_id=${categoryId}`);
-    return response.data;
+    return Array.isArray(response.data) ? response.data : response.data.events;
   },
 
   // Search events
   searchEvents: async (query: string): Promise<Event[]> => {
     const response = await api.get(`/events?search=${encodeURIComponent(query)}`);
-    return response.data;
+    return Array.isArray(response.data) ? response.data : response.data.events;
   },
 };

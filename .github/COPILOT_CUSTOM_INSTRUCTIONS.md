@@ -1,7 +1,5 @@
 # Copilot Instructions for Events_berlin
 
-## Development Guidelines
-
 Be an experienced fullstack software engineer, always use these guides:
 - **Rails**: https://guides.rubyonrails.org/
 - **Ruby**: https://www.ruby-lang.org/en/documentation/
@@ -10,95 +8,111 @@ Be an experienced fullstack software engineer, always use these guides:
 
 - https://docs.rubocop.org/rubocop-rails/index.html
 
-## Project Context
-Box2.0-up-1 is a Rails 7.1 application powered by Ruby 3.2.2, built to deliver an Eventbrite-style platform for event management.
-The project repository is hosted at git@github.com:Kevspecial/Events_berlin.git and combines modern Rails conventions with enterprise-level tooling.
+## Project Overview
 
-## Architecture & Stack
+Events Berlin is a full-stack Eventbrite-style platform for Berlin events. The backend is a Rails 7.1 JSON API (Ruby 3.2.2) and the frontend is a separate Next.js 15 app (React 19, TypeScript, TailwindCSS 4) in the `/frontend` directory.
 
-### Core Framework
-- **Backend:** Rails 7.1 (API mode preferred)
-- **Frontend:** Next.js (TypeScript recommended)
-- **Database:** PostgreSQL (SQLite3 in development)
-- **Admin Interface:** ActiveAdmin with custom addons
-- **Frontend Utilities:** Bootstrap + Font Awesome
-- **Bundling:** cssbundling-rails and importmap
-# Copilot / Assistant Reference — Events_berlin
+- **Frontend**: http://localhost:3001
+- **Rails API**: http://localhost:3000
+- **Admin Panel**: http://localhost:3000/admin
 
-Purpose: a short, actionable guide for automated assistants (Copilot or reviewers) to work safely and productively on this repository.
+## Commands
 
-Prime facts
-- Ruby: 3.2.2
-- Rails: 7.1.x (lockfile shows 7.1.5.2)
-- Frontend: Next.js (TypeScript present under `/frontend`)
-- DB (dev/test): SQLite3 locally, PostgreSQL in CI/production
+### Rails Backend
 
-How to use this file
-- Read quickly for project constraints, dev commands, and do/don't rules.
-- When proposing changes: prefer small, test-covered edits. Add migration or spec changes where appropriate.
+```bash
+bundle install
+bin/rails db:create db:migrate db:seed   # DB setup
+bin/rails server                          # Start Rails (port 3000)
+bundle exec sidekiq                       # Start background job processor
+bin/rails test                            # Run all tests
+bin/rails test test/models/user_test.rb  # Run a single test file
+bin/rubocop --parallel                    # Lint
+bin/brakeman                             # Security scan
+bundle exec bundler-audit check --update # Dependency audit
+```
 
-Behaviour & assumptions for automated suggestions
-- Act like an experienced Rails fullstack engineer.
-- Prefer safe, non-breaking changes by default.
-- When upgrading gems, run `bundle install` and the test suite; include a short compatibility note in the PR.
-- Avoid editing large files without tests; prefer small, incremental refactors.
+### Next.js Frontend
 
-Repo conventions (short)
-- Code style: RuboCop config in repo — run `bin/rubocop --parallel`.
-- Tests: Minitest fixtures under `test/`; run with `bin/rails test`.
-- Admin: ActiveAdmin lives in `app/admin` and uses DSL-heavy files (they often trigger Metrics/BlockLength).
-- JS: Frontend app under `/frontend` (Next.js) — run `npm install` then `npm run dev` or `npm run build`.
+```bash
+cd frontend
+npm install
+npm run dev    # Start dev server (port 3001, uses Turbopack)
+npm run build  # Production build
+npm run lint   # ESLint
+```
 
-Quick commands
-- Install Ruby gems: `bundle install`
-- Run RuboCop: `bin/rubocop --parallel`
-- Run tests (rails): `bin/rails db:create db:schema:load RAILS_ENV=test && bin/rails test`
-- Start Rails (dev): `bin/dev` (or `bin/rails server`)
-- Start Next.js: `cd frontend && npm install && npm run dev`
+### Docker (recommended for full-stack)
 
-Security & dependency handling
-- Report vulnerabilities but avoid forcing CI failure for audit-only findings unless a security owner asks.
-- When bumping gems for advisories:
-	- bump minimal required version in `Gemfile` and run `bundle update <gem>`.
-	- run tests and fix regressions incrementally.
+```bash
+docker compose up --build
+docker compose exec web rails db:create db:migrate db:seed
+```
 
-Testing guidance
-- Prefer fixing or adding small tests for any behavioral change.
-- Fixtures should be valid YAML without runtime ERB that depends on app boot ordering.
+## Architecture
 
-Pull request expectations
-- Provide a 2–3 line summary of intent.
-- List commands you ran locally (lint, test, build).
-- Mention any remaining TODOs or risks.
+### Dual Rails Routing
 
-Common tasks & examples
-- Update a gem safely:
-	1) Edit `Gemfile` to allow the minimal safe version.
-	2) Run `bundle update <gem>`.
-	3) Run `bin/rails test` and `bin/rubocop --parallel`.
+The app has two distinct route groups:
 
-- Fix a failing fixture:
-	- Ensure `test/fixtures/*.yml` contains valid YAML.
-	- Avoid ERB that references runtime-only code (e.g., Devise encryptors at parse time).
+1. **Legacy web routes** — `resources :events`, `resources :attendings`, etc. These use standard Rails controllers with Devise session auth and are effectively unused by the production UI.
+2. **API routes** — `namespace :api > namespace :v1` — all controllers under `app/controllers/api/v1/`. These serve the Next.js frontend. `BaseController` requires `authenticate_user!` (Devise) but uses `null_session` CSRF protection.
 
-Prompt templates for the assistant
-- "Summarize the failing tests after `bin/rails test` and suggest the minimal code fix and fixture change." 
-- "Create a focused PR that updates `rack` to >= 3.2.x and runs tests; include rollback instructions if tests fail." 
-- "Refactor `app/admin/*.rb` files to reduce method complexity in separate commits and keep tests green."
+### Authentication Flow
 
-Notes and constraints
-- Keep PRs small and focused. Large cross-cutting refactors should be split.
-- When touching production-facing code, run integration smoke tests locally if possible.
-- Frontend Design guide: Use '.github/frontend-spec.md' as inspiration.
-- PRD: dont deviate from '.github/PRD.md' as it has the goals of the version of this project.
-- 
+The API uses session-based authentication (Devise), but the frontend stores the auth token in `localStorage` and sends it as `Authorization: Bearer <token>` on every request (`frontend/src/lib/api.ts`). A 401 response clears localStorage and redirects to `/login`.
 
-If unsure
+Two separate user models exist:
+- `User` — attendees, organizers, admins; authenticated via API
+- `AdminUser` — ActiveAdmin dashboard only; separate Devise scope
+
+### User Roles
+
+`User` has an enum role: `attendee (0)`, `organizer (1)`, `admin (2)`. Admin role **cannot** be assigned on creation through the API — validated by `prevent_admin_role_assignment`. To bypass in seeds or console, set `user.skip_admin_validation = true`.
+
+### Service Objects
+
+- `BookingService` — validates ticket/event capacity and creates `Booking` in a transaction
+- `PaymentService` — wraps Stripe API calls (payment intents, refunds, checkout session retrieval)
+
+Booking statuses: `pending` / `confirmed` / `cancelled`
+Payment statuses: `unpaid` / `paid` / `failed` / `refunded`
+
+### Frontend Data Layer
+
+- `frontend/src/lib/api.ts` — Axios instance with auth interceptor
+- `frontend/src/services/` — API call wrappers per domain (auth, event, booking, user)
+- `frontend/src/hooks/` — TanStack React Query hooks consuming the service layer
+- `frontend/src/providers/AuthProvider.tsx` — Context provider managing auth state from localStorage
+
+### ActiveAdmin
+
+Admin resources live in `app/admin/`. These files use DSL blocks that trigger RuboCop's `Metrics/BlockLength` — this is expected and suppressed. Every model exposed in admin must define `ransackable_attributes` and `ransackable_associations` class methods to enable admin search.
+
+## Environment Variables
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection (CI/production) |
+| `REDIS_URL` | Sidekiq + ActionCable |
+| `STRIPE_SECRET_KEY` | Stripe backend key |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing |
+| `FRONTEND_URL` | Used for Stripe redirect URLs |
+| `CORS_ORIGINS` | Comma-separated allowed origins |
+| `NEXT_PUBLIC_API_URL` | API URL for frontend (default: `http://localhost:3000/api/v1`) |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe frontend key |
+
+Copy `.env.example` to `.env` and fill in keys before running locally.
+
+## Key Conventions
+
+- API controllers render JSON only — no HTML views under `api/v1/`
+- Pundit policies in `app/policies/` authorize all API actions; `BaseController` rescues `Pundit::NotAuthorizedError` as 403
+- ActiveModel::Serializers in `app/serializers/` control JSON shape
+- Background jobs (Sidekiq) in `app/jobs/` — `BookingConfirmationJob` sends confirmation emails
+- Database: SQLite3 locally (dev/test), PostgreSQL in CI (`config/database.yml.github` is swapped in by CI)
+- PRD at `documentation/PRD.md` defines v1 scope — do not add seat maps, dynamic pricing, multi-day passes, or external marketplace integrations
+
+
+## If unsure
 - Ask a short clarifying question and include the precise file and line range you plan to change.
-
-Repository links
-- CI workflow: `.github/workflows/ci.yml`
-- RuboCop config: `.rubocop.yml`
-- Test fixtures: `test/fixtures/`
-
-End of guide

@@ -1,14 +1,12 @@
 # frozen_string_literal: true
 
 class BookingConfirmationJob < ApplicationJob
-  queue_as :default
+  queue_as :mailers
 
   def perform(booking_id)
-    Booking.find(booking_id)
-
-    # TODO: Send confirmation email
-    # BookingMailer.confirmation_email(booking).deliver_now
-
-    Rails.logger.info "Booking confirmation job completed for booking ##{booking_id}"
+    booking = Booking.includes(:event, :user).find(booking_id)
+    BookingMailer.confirmation(booking).deliver_now
+  rescue ActiveRecord::RecordNotFound => e
+    Rails.logger.error "BookingConfirmationJob: #{e.message}"
   end
 end

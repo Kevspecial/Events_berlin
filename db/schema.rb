@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_08_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_26_220516) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -91,6 +91,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_08_000001) do
     t.string "payment_status", default: "unpaid"
     t.datetime "paid_at"
     t.index ["event_id"], name: "index_bookings_on_event_id"
+    t.index ["payment_status"], name: "index_bookings_on_payment_status"
     t.index ["status"], name: "index_bookings_on_status"
     t.index ["stripe_checkout_session_id"], name: "index_bookings_on_stripe_checkout_session_id", unique: true
     t.index ["stripe_payment_intent_id"], name: "index_bookings_on_stripe_payment_intent_id"
@@ -122,6 +123,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_08_000001) do
     t.integer "capacity"
     t.index ["category_id"], name: "index_events_on_category_id"
     t.index ["creator_id"], name: "index_events_on_creator_id"
+    t.index ["date"], name: "index_events_on_date"
+    t.index ["private"], name: "index_events_on_private"
     t.index ["venue_id"], name: "index_events_on_venue_id"
   end
 
@@ -134,6 +137,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_08_000001) do
     t.index ["event_id"], name: "index_invites_on_event_id"
     t.index ["invitee_id"], name: "index_invites_on_invitee_id"
     t.index ["inviter_id"], name: "index_invites_on_inviter_id"
+  end
+
+  create_table "jwt_denylists", force: :cascade do |t|
+    t.string "jti", null: false
+    t.datetime "exp", null: false
+    t.index ["jti"], name: "index_jwt_denylists_on_jti"
   end
 
   create_table "ticket_types", force: :cascade do |t|

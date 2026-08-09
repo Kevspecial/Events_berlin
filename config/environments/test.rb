@@ -59,4 +59,7 @@ Rails.application.configure do
 
   # Annotate rendered view with file names.
   # config.action_view.annotate_rendered_view_with_filenames = true
+
+  # Enable Rack::Attack rate limiting in tests
+  config.middleware.use Rack::Attack
 end

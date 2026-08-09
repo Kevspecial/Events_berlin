@@ -1,0 +1,7 @@
+#!/bin/bash -e
+
+if [ "${*}" == "./bin/rails server" ]; then
+  ./bin/rails db:migrate 2>/dev/null || true
+fi
+
+exec "${@}"

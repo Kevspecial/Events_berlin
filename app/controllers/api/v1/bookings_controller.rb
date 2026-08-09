@@ -14,7 +14,7 @@ module Api
       end
 
       def create
-        @booking = current_user.bookings.build(booking_params)
+        @booking = current_user.bookings.build(booking_params.merge(event_id: params[:event_id]))
         authorize @booking
 
         if @booking.save

@@ -1,0 +1,44 @@
+app = "events-berlin-api"
+primary_region = "fra"
+
+[build]
+
+[deploy]
+  release_command = "bin/rails db:migrate"
+
+[env]
+  PORT = "8080"
+  RAILS_LOG_TO_STDOUT = "true"
+  RAILS_SERVE_STATIC_FILES = "true"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[[processes]]
+  name = "web"
+  entrypoint = ["bundle", "exec", "puma", "-C", "config/puma.rb"]
+
+[[processes]]
+  name = "worker"
+  entrypoint = ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]

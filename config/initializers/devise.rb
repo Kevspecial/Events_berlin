@@ -314,4 +314,22 @@ Devise.setup do |config|
   # When set to false, does not sign a user in automatically after their password is
   # changed. Defaults to true, so a user is signed in automatically after changing a password.
   # config.sign_in_after_change_password = true
+
+  # ==> Configuration for devise-jwt
+  config.jwt do |jwt|
+    jwt.secret = if Rails.env.production? || Rails.env.staging?
+      ENV.fetch('DEVISE_JWT_SECRET_KEY')
+    else
+      ENV.fetch('DEVISE_JWT_SECRET_KEY') { SecureRandom.hex(64) }
+    end
+    # dispatch_requests intentionally omitted: tokens are issued manually by
+    # SessionsController via Warden::JWTAuth::UserEncoder so that the token is
+    # returned in the JSON body (used by the frontend). Adding dispatch_requests
+    # here would also emit a second token in the Authorization response header —
+    # an orphaned token that is never revoked until expiry.
+    jwt.revocation_requests = [
+      ['DELETE', %r{^/api/v1/logout$}]
+    ]
+    jwt.expiration_time = 24.hours.to_i
+  end
 end

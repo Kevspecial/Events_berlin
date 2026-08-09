@@ -2,7 +2,7 @@ require 'test_helper'
 
 class CategoryTest < ActiveSupport::TestCase
   test 'valid category' do
-    category = Category.new(name: 'Music')
+    category = Category.new(name: 'Jazz')
     assert category.valid?
   end
 
@@ -13,8 +13,8 @@ class CategoryTest < ActiveSupport::TestCase
   end
 
   test 'requires unique name' do
-    Category.create!(name: 'Music')
-    category = Category.new(name: 'Music')
+    Category.create!(name: 'Jazz')
+    category = Category.new(name: 'Jazz')
     assert_not category.valid?
     assert_includes category.errors[:name], 'has already been taken'
   end

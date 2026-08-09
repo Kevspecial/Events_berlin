@@ -10,7 +10,7 @@ class Booking < ApplicationRecord
   validates :status, presence: true, inclusion: { in: %w[pending confirmed cancelled] }
   validates :payment_status, inclusion: { in: %w[unpaid paid failed refunded] }, allow_nil: true
 
-  before_validation :calculate_total_price, if: :quantity_changed?
+  before_validation :calculate_total_price
 
   scope :confirmed, -> { where(status: 'confirmed') }
   scope :pending, -> { where(status: 'pending') }

@@ -1,0 +1,25 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: Berlin Music Festival
+  description: A great music festival in Berlin
+  location: Berlin Arena
+  date: 2027-07-15 18:00:00
+  private: false
+  creator: one
+  category: music
+  venue: berlin_arena
+  price: 29.99
+  capacity: 500
+
+two:
+  name: Tech Meetup Berlin
+  description: Monthly tech meetup for developers
+  location: Small Conference Hall
+  date: 2027-08-10 19:00:00
+  private: false
+  creator: two
+  category: technology
+  venue: small_hall
+  price: 0.00
+  capacity: 100
