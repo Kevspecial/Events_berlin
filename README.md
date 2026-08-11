@@ -190,13 +190,42 @@ bundle exec bundler-audit check --update
 - [Security & Production Readiness](documentation/SECURITY.md)
 - [Implementation Summary](documentation/IMPLEMENTATION_SUMMARY.md)
 
+## Branching Model
+
+The repository uses three long-lived branches. Changes flow forward in one direction: **feature → `main` → `staging` → `production`**.
+
+| Branch | Purpose | Deploys to |
+|--------|---------|------------|
+| `main` | Integration branch. All feature/bugfix PRs merge here first. Always green (CI + tests). | Dev / preview |
+| `staging` | Pre-production snapshot of `main` for QA and smoke testing before release. | Staging environment |
+| `production` | The deployable branch. Only fast-forwards from `staging` after sign-off. | Production environment |
+
+```
+feature/*  ──► main  ──► staging  ──► production
+                (PR)     (promote)     (release)
+```
+
+### Rules
+
+- **No direct commits** to `staging` or `production`. They only receive merges/fast-forwards from the branch to their left.
+- **`main` is the source of truth.** If `staging` or `production` diverges, reset it forward from `main`, don't merge sideways.
+- **Promotions are fast-forward only** — keeps `production` history linear and easy to audit.
+  ```bash
+  # promote main → staging
+  git checkout staging && git merge --ff-only main && git push
+
+  # promote staging → production (after QA)
+  git checkout production && git merge --ff-only staging && git push
+  ```
+- **Hotfixes** branch from `production`, land back on `main` via PR, then follow the normal promotion path forward.
+
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+2. Create a feature branch off `main` (`git checkout -b feature/amazing-feature main`)
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+4. Push the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request **targeting `main`** — never `staging` or `production` directly
 
 ## License
 
