@@ -51,6 +51,19 @@ module Api
         end
       end
 
+      def destroy
+        order = policy_scope(Order).find(params[:id])
+        authorize order, :cancel?
+
+        result = Orders::CancellationService.new(order: order, reason: params[:reason]).call
+
+        if result[:success]
+          render json: result[:order], serializer: OrderSerializer, include: ORDER_INCLUDES
+        else
+          render json: { error: result[:error], code: result[:code] }, status: :unprocessable_entity
+        end
+      end
+
       private
 
       def render_creation_result(result)

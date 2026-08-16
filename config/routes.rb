@@ -48,11 +48,7 @@ Rails.application.routes.draw do
       resources :categories, only: [:index]
       resources :venues, only: [:index]
 
-      resources :bookings, only: %i[index show] do
-        member do
-          patch :cancel
-        end
-      end
+      resources :bookings, only: %i[index show]
 
       # Stripe checkout endpoints
       scope 'checkout' do

@@ -9,18 +9,6 @@ class BookingPolicy < ApplicationPolicy
     user.admin? || record.user_id == user.id
   end
 
-  def create?
-    true
-  end
-
-  def update?
-    user.admin? || record.user_id == user.id
-  end
-
-  def cancel?
-    user.admin? || record.user_id == user.id
-  end
-
   def destroy?
     user.admin?
   end

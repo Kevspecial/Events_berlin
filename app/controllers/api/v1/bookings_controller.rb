@@ -12,17 +12,6 @@ module Api
         @booking = current_user.bookings.find(params[:id])
         render json: @booking, include: %i[event ticket_type]
       end
-
-      def cancel
-        @booking = current_user.bookings.find(params[:id])
-        authorize @booking
-
-        if @booking.update(status: 'cancelled')
-          render json: @booking
-        else
-          render json: { errors: @booking.errors.full_messages }, status: :unprocessable_entity
-        end
-      end
     end
   end
 end
