@@ -2495,6 +2495,25 @@ module Tickets
       assert_equal 0, @order.reload.tickets.count
     end
 
+    test 'retries past a code collision without losing the rest of the order' do
+      # The first generated code duplicates an existing ticket. A collision must
+      # cost one retry, not the whole order's issuance.
+      sequence = [
+        tickets(:issued_one).code, # collides — forces one retry
+        'EB-Z9Y8X7W6V5T4', 'EB-Y8X7W6V5T4S3', 'EB-X7W6V5T4S3R2',
+        'EB-W6V5T4S3R2Q1', 'EB-V5T4S3R2Q1P0'
+      ]
+
+      Ticket.stub(:generate_code, -> { sequence.shift }) do
+        result = Tickets::IssuanceService.new(order: @order).call
+        assert result[:success], result[:error]
+      end
+
+      assert_equal 5, @order.reload.tickets.count
+      assert_equal 5, @order.tickets.pluck(:code).uniq.size
+      assert_empty sequence, 'expected every generated code to be consumed'
+    end
+
     test 'payment completion issues tickets automatically' do
       @order.update!(status: 'pending', payment_status: 'unpaid', paid_at: nil, tickets_issued_at: nil)
 
@@ -2550,8 +2569,25 @@ module Tickets
       { success: false, error: message, code: code }
     end
 
+    # Ticket.generate_code checks for a collision before inserting, but that
+    # check and the insert are not atomic. A collision is astronomically
+    # unlikely (60 bits of entropy) yet its blast radius is not: a raised
+    # RecordNotUnique inside the issuance transaction would poison it and roll
+    # back every ticket in the order, not just the colliding one. The savepoint
+    # confines a retry to the single row.
     def issue_for(booking)
-      Array.new(booking.quantity) { booking.tickets.create! }
+      Array.new(booking.quantity) { create_ticket(booking) }
+    end
+
+    def create_ticket(booking, attempts: 3)
+      ActiveRecord::Base.transaction(requires_new: true) do
+        booking.tickets.create!
+      end
+    rescue ActiveRecord::RecordNotUnique
+      attempts -= 1
+      raise if attempts.zero?
+
+      retry
     end
   end
 end
