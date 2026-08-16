@@ -16,20 +16,22 @@ module Orders
     end
 
     def call
-      return { success: true, order: order } if order.paid?
-      return failure(:not_completable, 'This order can no longer be paid') unless completable?
+      early_result = order.with_lock do
+        next { success: true, order: order } if order.paid?
+        next failure(:not_completable, 'This order can no longer be paid') unless completable?
 
-      complete!
-      { success: true, order: order.reload }
+        complete!
+        nil
+      end
+
+      early_result || { success: true, order: order.reload }
     end
 
     private
 
     def complete!
-      ActiveRecord::Base.transaction do
-        mark_order_paid
-        confirm_bookings
-      end
+      mark_order_paid
+      confirm_bookings
     end
 
     def mark_order_paid
@@ -42,7 +44,14 @@ module Orders
     end
 
     def confirm_bookings
-      order.bookings.find_each { |booking| booking.update!(status: 'confirmed') }
+      # Stripe has already captured the money by the time this runs, so the
+      # cascade must not be blockable. update_all deliberately bypasses
+      # validations: a booking that somehow fails one must not strand an order
+      # the buyer has paid for, with Stripe retrying forever against the same
+      # bad row.
+      # rubocop:disable Rails/SkipsModelValidations
+      order.bookings.update_all(status: 'confirmed', updated_at: Time.current)
+      # rubocop:enable Rails/SkipsModelValidations
     end
 
     def failure(code, message)

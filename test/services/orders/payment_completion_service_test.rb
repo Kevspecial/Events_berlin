@@ -63,5 +63,33 @@ module Orders
       assert result[:success], result[:error]
       assert_equal 'paid', @order.reload.status
     end
+
+    test 'confirms bookings even when one would fail validation' do
+      # Corrupt a booking so a validating update would raise. quantity is used
+      # (rather than total_price) because total_price carries a DB-level
+      # NOT NULL constraint that update_column cannot get past at all; quantity
+      # only carries a model-level numericality validation, which is exactly
+      # the kind of failure a validating cascade must not be blocked by. The
+      # money has already been captured, so the cascade must still complete.
+      @booking.update_column(:quantity, 0) # rubocop:disable Rails/SkipsModelValidations
+
+      result = complete
+
+      assert result[:success], result[:error]
+      assert_equal 'paid', @order.reload.status
+      assert_equal 'confirmed', @booking.reload.status
+    end
+
+    test 'takes a row lock before transitioning' do
+      statements = []
+      collector = ->(_name, _start, _finish, _id, payload) { statements << payload[:sql] }
+
+      ActiveSupport::Notifications.subscribed(collector, 'sql.active_record') do
+        complete
+      end
+
+      assert(statements.any? { |sql| sql.include?('FOR UPDATE') },
+             'expected the order row to be locked before the paid check')
+    end
   end
 end
