@@ -6,26 +6,6 @@ module Api
       skip_before_action :authenticate_user!, only: [:webhook]
       skip_before_action :verify_authenticity_token, only: [:webhook], raise: false
 
-      # POST /api/v1/checkout/sessions
-      # Creates a Stripe Checkout Session for a booking
-      def create
-        booking = current_user.bookings.find(params[:booking_id])
-
-        unless booking.pending? && booking.payment_status == 'unpaid'
-          return render json: { error: 'Booking is not eligible for payment' }, status: :unprocessable_entity
-        end
-
-        session = create_checkout_session(booking)
-        booking.update!(stripe_checkout_session_id: session.id)
-
-        render json: {
-          checkout_url: session.url,
-          session_id: session.id
-        }
-      rescue Stripe::StripeError => e
-        render json: { error: e.message }, status: :unprocessable_entity
-      end
-
       # POST /api/v1/checkout/webhook
       # Handles Stripe webhook events
       def webhook
@@ -46,36 +26,6 @@ module Api
       end
 
       private
-
-      def create_checkout_session(booking)
-        frontend_url = ENV.fetch('FRONTEND_URL', 'http://localhost:3001')
-
-        Stripe::Checkout::Session.create(
-          mode: 'payment',
-          customer_email: current_user.email,
-          line_items: [{
-            price_data: {
-              currency: 'eur',
-              product_data: {
-                name: "#{booking.event.name} - #{booking.ticket_type.name}",
-                description: "#{booking.quantity}x ticket(s) for #{booking.event.name}",
-                metadata: {
-                  event_id: booking.event.id,
-                  ticket_type_id: booking.ticket_type.id
-                }
-              },
-              unit_amount: (booking.ticket_type.price * 100).to_i
-            },
-            quantity: booking.quantity
-          }],
-          metadata: {
-            booking_id: booking.id,
-            user_id: current_user.id
-          },
-          success_url: "#{frontend_url}/checkout/success?session_id={CHECKOUT_SESSION_ID}",
-          cancel_url: "#{frontend_url}/checkout/cancel?booking_id=#{booking.id}"
-        )
-      end
 
       def handle_webhook_event(event)
         case event.type

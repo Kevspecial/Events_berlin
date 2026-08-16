@@ -4,6 +4,7 @@ class Booking < ApplicationRecord
   belongs_to :user
   belongs_to :event
   belongs_to :ticket_type
+  belongs_to :order
 
   validates :quantity, presence: true, numericality: { greater_than: 0, only_integer: true }
   validates :total_price, presence: true, numericality: { greater_than_or_equal_to: 0 }
@@ -16,6 +17,7 @@ class Booking < ApplicationRecord
   scope :pending, -> { where(status: 'pending') }
   scope :cancelled, -> { where(status: 'cancelled') }
   scope :paid, -> { where(payment_status: 'paid') }
+  scope :holding_inventory, -> { joins(:order).merge(Order.holding_inventory) }
 
   # Status check methods
   def pending?

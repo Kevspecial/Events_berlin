@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_15_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_15_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -90,7 +90,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_15_120000) do
     t.string "stripe_payment_intent_id"
     t.string "payment_status", default: "unpaid"
     t.datetime "paid_at"
+    t.bigint "order_id", null: false
     t.index ["event_id"], name: "index_bookings_on_event_id"
+    t.index ["order_id"], name: "index_bookings_on_order_id"
     t.index ["payment_status"], name: "index_bookings_on_payment_status"
     t.index ["status"], name: "index_bookings_on_status"
     t.index ["stripe_checkout_session_id"], name: "index_bookings_on_stripe_checkout_session_id", unique: true
@@ -210,6 +212,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_15_120000) do
   add_foreign_key "attendings", "events", column: "attended_event_id"
   add_foreign_key "attendings", "users", column: "attendee_id"
   add_foreign_key "bookings", "events"
+  add_foreign_key "bookings", "orders"
   add_foreign_key "bookings", "ticket_types"
   add_foreign_key "bookings", "users"
   add_foreign_key "events", "categories"

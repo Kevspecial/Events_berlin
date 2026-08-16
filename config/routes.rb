@@ -30,7 +30,7 @@ Rails.application.routes.draw do
       delete 'logout', to: 'sessions#destroy'
 
       resources :events do
-        resources :bookings, only: [:create]
+        resources :orders, only: [:create]
       end
 
       resources :categories, only: [:index]
@@ -44,7 +44,6 @@ Rails.application.routes.draw do
 
       # Stripe checkout endpoints
       namespace :checkout do
-        post 'sessions', to: 'checkout#create'
         post 'webhook', to: 'checkout#webhook'
       end
 
