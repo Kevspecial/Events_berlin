@@ -3,16 +3,11 @@
 require 'test_helper'
 
 module Orders
+  # rubocop:disable Metrics/ClassLength -- a test file with one example per
+  # behaviour is long by nature; splitting it would obscure the coverage map.
   class CheckoutServiceTest < ActiveSupport::TestCase
     setup do
       @order = orders(:pending_two)
-      # The fixture booking's frozen total_price (99.99, i.e. 9999 cents) is a
-      # numeric prefix of the live price the frozen-price regression test
-      # below writes onto its ticket type (999.99, i.e. 99999 cents). Left
-      # alone, a substring check on the request body would match either
-      # value and the test would pass even against the pre-fix bug, so give
-      # the fixture booking a frozen price that can't collide that way.
-      @order.bookings.first.update_column(:total_price, 45.00) # rubocop:disable Rails/SkipsModelValidations
       @order.bookings.create!(
         user: users(:two), event: events(:one),
         ticket_type: ticket_types(:one), quantity: 2, status: 'pending'
@@ -118,8 +113,8 @@ module Orders
 
       assert result[:success], result[:error]
       assert_requested(:post, 'https://api.stripe.com/v1/checkout/sessions') do |req|
-        req.body.include?("unit_amount%5D=#{original_unit_cents}") ||
-          req.body.include?("unit_amount]=#{original_unit_cents}")
+        parsed = Rack::Utils.parse_nested_query(req.body)
+        parsed['line_items']['0']['price_data']['unit_amount'] == original_unit_cents.to_s
       end
     end
 
@@ -132,5 +127,51 @@ module Orders
       assert_equal :amount_mismatch, result[:code]
       assert_not_requested :post, 'https://api.stripe.com/v1/checkout/sessions'
     end
+
+    test 'refuses a fresh session when the existing one is already complete' do
+      stub_session
+      Orders::CheckoutService.new(order: @order).call
+
+      stub_request(:get, %r{https://api\.stripe\.com/v1/checkout/sessions/cs_test_123})
+        .to_return(
+          status: 200,
+          headers: { 'Content-Type' => 'application/json' },
+          body: { id: 'cs_test_123', object: 'checkout.session', status: 'complete',
+                  url: 'https://checkout.stripe.com/c/pay/cs_test_123' }.to_json
+        )
+      WebMock.reset_executed_requests!
+
+      result = Orders::CheckoutService.new(order: @order.reload).call
+
+      assert_not result[:success]
+      assert_equal :payment_in_progress, result[:code]
+      assert_not_requested :post, 'https://api.stripe.com/v1/checkout/sessions'
+    end
+
+    test 'creates a fresh session when the existing one expired' do
+      stub_session
+      Orders::CheckoutService.new(order: @order).call
+
+      stub_request(:get, %r{https://api\.stripe\.com/v1/checkout/sessions/cs_test_123})
+        .to_return(
+          status: 200,
+          headers: { 'Content-Type' => 'application/json' },
+          body: { id: 'cs_test_123', object: 'checkout.session', status: 'expired' }.to_json
+        )
+
+      result = Orders::CheckoutService.new(order: @order.reload).call
+
+      assert result[:success], result[:error]
+    end
+
+    test 'tolerates a one-cent rounding gap between line items and the order total' do
+      @order.update_column(:total_amount, @order.total_amount + 0.01) # rubocop:disable Rails/SkipsModelValidations
+
+      stub_session
+      result = Orders::CheckoutService.new(order: @order).call
+
+      assert result[:success], result[:error]
+    end
   end
+  # rubocop:enable Metrics/ClassLength
 end

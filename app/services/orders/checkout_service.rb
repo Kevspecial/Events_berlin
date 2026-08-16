@@ -37,20 +37,37 @@ module Orders
       order.pending? && !order.free? && order.expires_at > Time.current
     end
 
-    # If the order already points at a Stripe session, reuse it rather than
-    # minting a second live session for the same order (which would let a
-    # buyer pay twice). Only a still-open session is reusable; a completed or
-    # expired one falls through to create_fresh_session. An id Stripe no
-    # longer recognises (e.g. stale test data) is treated the same as having
-    # no session at all.
+    # If the order already points at a Stripe session, decide what to do with
+    # it based on its status rather than assuming it is still usable:
+    #
+    # * 'open'     — still awaiting payment; reuse it instead of minting a
+    #                second live session for the same order.
+    # * 'complete' — the buyer already paid. The order can still be 'pending'
+    #                here because the checkout.session.completed webhook may
+    #                not have landed yet (queue lag, retries, a resubmit).
+    #                Refuse rather than hand out a second payment link.
+    # * 'expired'  — the buyer abandoned it; a fresh session is fine.
+    #
+    # An id Stripe no longer recognises (e.g. stale test data) is treated the
+    # same as having no session at all.
     def reusable_session
       id = order.stripe_checkout_session_id
       return nil if id.blank?
 
       existing = Stripe::Checkout::Session.retrieve(id)
-      existing if existing.status == 'open'
+      status_to_result(existing)
     rescue Stripe::InvalidRequestError
       nil
+    end
+
+    def status_to_result(existing)
+      case existing.status
+      when 'open'
+        existing
+      when 'complete'
+        failure(:payment_in_progress,
+                'This order has already been paid. Its confirmation is still processing.')
+      end
     end
 
     def create_fresh_session
@@ -73,9 +90,31 @@ module Orders
     # have drifted apart (e.g. a data bug, a manual edit) we refuse to create
     # a session rather than risk charging the buyer an amount they never
     # agreed to.
+    #
+    # Exact equality is the wrong test, though: each line item's unit_amount
+    # is rounded independently, while order.total_amount is rounded once, so
+    # the two are only guaranteed to agree while total_price divides evenly
+    # into whole cents by quantity. Any future discount, proration, or manual
+    # adjustment can make them diverge by a cent or two per item even though
+    # the order is perfectly valid — and since nothing about the stored order
+    # changes on retry, refusing outright would permanently block payment.
+    # Allow up to a cent of drift per line item; anything beyond that is real
+    # data drift, not rounding noise.
     def amounts_reconcile?(items)
       items_total_cents = items.sum { |item| item[:price_data][:unit_amount] * item[:quantity] }
-      items_total_cents == (order.total_amount * 100).round
+      order_total_cents = (order.total_amount * 100).round
+      gap = (items_total_cents - order_total_cents).abs
+      return false if gap > items.size
+
+      log_rounding_gap(items_total_cents, order_total_cents) if gap.positive?
+      true
+    end
+
+    def log_rounding_gap(items_total_cents, order_total_cents)
+      message = "Order #{order.id} checkout rounding gap: line items total " \
+                "#{items_total_cents}c vs order total #{order_total_cents}c"
+      Rails.logger.warn(message)
+      Sentry.capture_message(message, level: :warning) if defined?(Sentry)
     end
 
     def session_params(items)
