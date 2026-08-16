@@ -30,7 +30,7 @@ class OrderExpiryJobTest < ActiveJob::TestCase
     assert_equal 'paid', order.reload.status
   end
 
-  test 'a swept order leaves its inventory released' do
+  test 'a swept order does not reclaim its stock if its hold is extended' do
     order = orders(:pending_two)
     baseline = ticket_types(:one).available_quantity
 
@@ -43,6 +43,11 @@ class OrderExpiryJobTest < ActiveJob::TestCase
 
     order.update!(expires_at: 1.minute.ago)
     OrderExpiryJob.perform_now
+
+    # Only the job's own effects — status expired, bookings cancelled — keep the
+    # stock released once the clock no longer does. Without the job, pushing
+    # expires_at forward would re-hold these seats.
+    order.update!(expires_at: 10.minutes.from_now)
 
     assert_equal baseline, ticket_types(:one).reload.available_quantity
     assert_equal 'expired', order.reload.status
@@ -64,6 +69,21 @@ class OrderExpiryJobTest < ActiveJob::TestCase
   test 'returns the number of orders it expired' do
     orders(:pending_two).update!(expires_at: 1.minute.ago)
     assert_equal 1, OrderExpiryJob.perform_now
+  end
+
+  test 'does not expire an order that was paid after being selected' do
+    order = orders(:pending_two)
+    order.update!(expires_at: 1.minute.ago)
+
+    # Simulate the webhook winning the race: the job has already selected this
+    # order as sweepable, but payment lands before it takes its lock.
+    Order.stub(:sweepable, Order.where(id: order.id)) do
+      order.update!(status: 'paid', payment_status: 'paid', paid_at: Time.current)
+      OrderExpiryJob.perform_now
+    end
+
+    assert_equal 'paid', order.reload.status
+    assert_not_equal 'cancelled', order.bookings.first&.status
   end
 
   test 'warns when a checkout session was started but never completed' do

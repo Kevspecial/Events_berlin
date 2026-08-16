@@ -11,23 +11,36 @@ class OrderExpiryJob < ApplicationJob
     count = 0
 
     Order.sweepable.find_each do |order|
-      ActiveRecord::Base.transaction do
-        order.update!(status: 'expired')
-        # Bypassing validations is deliberate: these bookings were valid when
-        # created, this is a pure status transition, and a sweeper must not be
-        # blockable by a single bad row.
-        # rubocop:disable Rails/SkipsModelValidations
-        order.bookings.update_all(status: 'cancelled', updated_at: Time.current)
-        # rubocop:enable Rails/SkipsModelValidations
-      end
-      report_abandoned_session(order)
-      count += 1
+      count += 1 if expire_if_still_sweepable(order)
     end
 
     count
   end
 
   private
+
+  # Locks the row and re-checks its state before touching it: the order may
+  # have been paid by a webhook between the sweepable SELECT and this UPDATE,
+  # and if so the job must do nothing at all.
+  def expire_if_still_sweepable(order)
+    expired = false
+
+    order.with_lock do
+      next unless order.pending? && order.expires_at&.past?
+
+      order.update!(status: 'expired')
+      # Bypassing validations is deliberate: these bookings were valid when
+      # created, this is a pure status transition, and a sweeper must not be
+      # blockable by a single bad row.
+      # rubocop:disable Rails/SkipsModelValidations
+      order.bookings.update_all(status: 'cancelled', updated_at: Time.current)
+      # rubocop:enable Rails/SkipsModelValidations
+      expired = true
+    end
+
+    report_abandoned_session(order) if expired
+    expired
+  end
 
   # An order that reached Stripe but never came back means either the buyer
   # walked away or a webhook was lost. The two are indistinguishable from here,
