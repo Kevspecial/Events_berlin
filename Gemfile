@@ -52,6 +52,7 @@ gem 'active_model_serializers', '~> 0.10.0'
 
 # Background jobs with Sidekiq
 gem 'sidekiq', '~> 7.0'
+gem 'sidekiq-cron', '~> 1.12'
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem 'image_processing', '~> 1.2'
