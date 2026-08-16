@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_15_120100) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_15_120200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -183,6 +183,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_15_120100) do
     t.index ["event_id"], name: "index_ticket_types_on_event_id"
   end
 
+  create_table "tickets", force: :cascade do |t|
+    t.bigint "booking_id", null: false
+    t.string "code", limit: 15, null: false
+    t.string "status", default: "issued", null: false
+    t.datetime "checked_in_at"
+    t.bigint "checked_in_by_id"
+    t.datetime "cancelled_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["booking_id", "status"], name: "index_tickets_on_booking_id_and_status"
+    t.index ["booking_id"], name: "index_tickets_on_booking_id"
+    t.index ["checked_in_by_id"], name: "index_tickets_on_checked_in_by_id"
+    t.index ["code"], name: "index_tickets_on_code", unique: true
+    t.index ["status"], name: "index_tickets_on_status"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -224,4 +240,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_15_120100) do
   add_foreign_key "orders", "events"
   add_foreign_key "orders", "users"
   add_foreign_key "ticket_types", "events"
+  add_foreign_key "tickets", "bookings"
+  add_foreign_key "tickets", "users", column: "checked_in_by_id"
 end

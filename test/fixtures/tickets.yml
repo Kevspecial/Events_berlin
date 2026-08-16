@@ -1,0 +1,24 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+issued_one:
+  booking: one
+  code: EB-A7X9K2M4P8Q3
+  status: issued
+
+issued_two:
+  booking: one
+  code: EB-B8Y0M3N5R9S4
+  status: issued
+
+checked_in_one:
+  booking: two
+  code: EB-C9Z1N4P6T0V5
+  status: checked_in
+  checked_in_at: <%= 1.hour.ago.to_fs(:db) %>
+  checked_in_by: two
+
+cancelled_one:
+  booking: two
+  code: EB-D0A2P5Q7W1X6
+  status: cancelled
+  cancelled_at: <%= 2.hours.ago.to_fs(:db) %>
