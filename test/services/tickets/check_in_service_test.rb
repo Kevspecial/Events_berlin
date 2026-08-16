@@ -69,5 +69,17 @@ module Tickets
       @ticket.event.update!(date: 2.hours.ago)
       assert check_in[:success]
     end
+
+    test 'locks the ticket row before reading its status' do
+      statements = []
+      collector = ->(_name, _start, _finish, _id, payload) { statements << payload[:sql] }
+
+      ActiveSupport::Notifications.subscribed(collector, 'sql.active_record') do
+        check_in
+      end
+
+      assert(statements.any? { |sql| sql.include?('FOR UPDATE') },
+             'expected the ticket row to be locked before the status guards run')
+    end
   end
 end
