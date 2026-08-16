@@ -38,6 +38,19 @@ module Api
         render_creation_result(Orders::CreationService.new(user: current_user, event: event, items: items).call)
       end
 
+      def checkout
+        order = policy_scope(Order).find(params[:id])
+        authorize order, :show?
+
+        result = Orders::CheckoutService.new(order: order).call
+
+        if result[:success]
+          render json: { checkout_url: result[:checkout_url], session_id: result[:session_id] }
+        else
+          render json: { error: result[:error], code: result[:code] }, status: :unprocessable_entity
+        end
+      end
+
       private
 
       def render_creation_result(result)

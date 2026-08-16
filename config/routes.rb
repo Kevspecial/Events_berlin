@@ -33,7 +33,11 @@ Rails.application.routes.draw do
         resources :orders, only: [:create]
       end
 
-      resources :orders, only: %i[index show destroy]
+      resources :orders, only: %i[index show destroy] do
+        member do
+          post :checkout
+        end
+      end
 
       resources :categories, only: [:index]
       resources :venues, only: [:index]
