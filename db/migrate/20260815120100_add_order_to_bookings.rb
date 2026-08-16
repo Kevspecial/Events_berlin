@@ -72,6 +72,20 @@ class AddOrderToBookings < ActiveRecord::Migration[7.1]
   end
 
   def down
+    # The backfill can only be undone while every order came from it. Once the
+    # application has created real orders, rolling back would destroy live
+    # purchase records, so refuse rather than guess which rows are safe.
+    orphan_orders = select_value(<<~SQL.squish).to_i
+      SELECT COUNT(*) FROM orders o
+      WHERE NOT EXISTS (SELECT 1 FROM bookings b WHERE b.order_id = o.id)
+    SQL
+
+    if orphan_orders.positive?
+      raise ActiveRecord::IrreversibleMigration,
+            "Refusing to roll back: #{orphan_orders} order(s) exist that this " \
+            'migration did not create. Remove them manually if you are certain.'
+    end
+
     remove_reference :bookings, :order, foreign_key: true
     execute 'DELETE FROM orders'
   end
