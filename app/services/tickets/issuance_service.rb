@@ -21,12 +21,22 @@ module Tickets
     # caller's inserts are visible. A second caller blocks on the lock and,
     # on acquiring it, observes tickets_issued_at already set.
     def call
-      order.with_lock do
+      issued = false
+
+      result = order.with_lock do
         next { success: true, tickets: order.tickets.to_a } if order.tickets_issued_at.present?
         next failure(:not_paid, 'Tickets are only issued for paid orders') unless order.paid?
 
+        issued = true
         { success: true, tickets: issue_all }
       end
+
+      # Enqueued after with_lock's transaction has committed, not inside it:
+      # a job enqueued from an open transaction can start running before the
+      # commit is visible, and the worker would find no tickets to email.
+      OrderConfirmationJob.perform_later(order.id) if issued
+
+      result
     end
 
     private

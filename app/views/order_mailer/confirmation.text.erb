@@ -1,0 +1,14 @@
+You're going to <%= @event.name %>
+<%= @event.date.strftime('%A, %-d %B %Y at %H:%M') %>
+
+Order <%= @order.reference %> is confirmed.
+<%= pluralize(@tickets.size, 'ticket') %> attached.
+
+<% @tickets.each do |ticket| -%>
+  <%= ticket.ticket_type.name %> — <%= ticket.code %>
+<% end -%>
+
+Present the QR code on each ticket at the door.
+Every ticket admits one person.
+
+Events Berlin

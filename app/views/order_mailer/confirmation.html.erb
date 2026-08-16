@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <body style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; color: #1a1a1a; line-height: 1.6;">
+    <h1 style="font-size: 22px; margin-bottom: 4px;">You're going to <%= @event.name %></h1>
+    <p style="color: #666; margin-top: 0;">
+      <%= @event.date.strftime('%A, %-d %B %Y at %H:%M') %>
+    </p>
+
+    <p>
+      Order <strong><%= @order.reference %></strong> is confirmed.
+      <%= pluralize(@tickets.size, 'ticket') %> attached as
+      <%= @tickets.size == 1 ? 'a PDF' : 'PDFs' %>.
+    </p>
+
+    <table style="border-collapse: collapse; margin: 20px 0;">
+      <% @tickets.each do |ticket| %>
+        <tr>
+          <td style="padding: 6px 16px 6px 0; color: #666;"><%= ticket.ticket_type.name %></td>
+          <td style="padding: 6px 0; font-family: monospace;"><%= ticket.code %></td>
+        </tr>
+      <% end %>
+    </table>
+
+    <p>Present the QR code on each ticket at the door. Every ticket admits one person.</p>
+
+    <p style="color: #999; font-size: 12px; margin-top: 32px;">
+      Events Berlin — you received this because you bought tickets at <%= @event.name %>.
+    </p>
+  </body>
+</html>
