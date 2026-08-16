@@ -47,5 +47,23 @@ module Tickets
 
       assert pdf.start_with?('%PDF')
     end
+
+    test 'renders a placeholder rather than raising when the holder is missing' do
+      # bookings.user_id is NOT NULL at the DB level, so the missing-holder
+      # case is exercised by stubbing the association instead of nulling it.
+      @ticket.stub :holder, nil do
+        pdf = Tickets::PdfRenderer.new(ticket: @ticket).render
+
+        assert pdf.start_with?('%PDF')
+      end
+    end
+
+    test 'renders a placeholder rather than raising when the event has no date' do
+      @ticket.event.update_column(:date, nil) # rubocop:disable Rails/SkipsModelValidations
+
+      pdf = Tickets::PdfRenderer.new(ticket: @ticket.reload).render
+
+      assert pdf.start_with?('%PDF')
+    end
   end
 end

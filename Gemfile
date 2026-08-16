@@ -63,8 +63,6 @@ gem 'stripe', '~> 10.0'
 # PDF ticket generation with embedded QR codes
 gem 'prawn', '~> 2.4'
 gem 'prawn-qrcode', '~> 0.5'
-# Table support was split out of Prawn core in 2.x; needed for the layout below
-gem 'prawn-table', '~> 0.2'
 
 # Pagination
 gem 'pagy', '~> 8.0'
