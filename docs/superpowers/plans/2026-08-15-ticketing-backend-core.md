@@ -3614,12 +3614,36 @@ In `app/controllers/api/v1/orders_controller.rb`, add this public action directl
 Run: `bin/rails test test/controllers/api/v1/orders_controller_test.rb`
 Expected: PASS — 13 runs, 0 failures, 0 errors
 
-- [ ] **Step 5: Lint and commit**
+- [ ] **Step 5: Retire the per-booking cancel endpoint**
+
+`PATCH /api/v1/bookings/:id/cancel` flips one booking to `cancelled` with no refund, no cutoff check, and no change to its order — leaving a `paid` order whose buyer was never repaid. `DELETE /api/v1/orders/:id` now covers cancellation properly, so the old endpoint is removed rather than left as a way to reach an inconsistent state.
+
+In `app/controllers/api/v1/bookings_controller.rb`, delete the entire `cancel` action. The controller retains only `index` and `show`.
+
+In `config/routes.rb`, remove the `member do patch :cancel end` block from the bookings resource, leaving:
+
+```ruby
+      resources :bookings, only: %i[index show]
+```
+
+In `app/policies/booking_policy.rb`, delete the now-unused `cancel?`, `create?`, and `update?` methods. `BookingPolicy` retains `index?`, `show?`, `destroy?`, and its `Scope`.
+
+In `test/controllers/api/v1/bookings_controller_test.rb`, delete any test exercising `cancel`.
+
+- [ ] **Step 6: Verify nothing references the removed endpoint**
+
+Run: `grep -rn "cancel_api_v1_booking\|bookings/.*cancel" app/ test/ config/ || echo "No references remain."`
+Expected: `No references remain.`
+
+Run: `bin/rails test test/controllers/`
+Expected: PASS
+
+- [ ] **Step 7: Lint and commit**
 
 ```bash
-bin/rubocop app/controllers/api/v1/orders_controller.rb test/controllers/api/v1/orders_controller_test.rb
-git add app/controllers/api/v1/orders_controller.rb test/controllers/api/v1/orders_controller_test.rb
-git commit -m "feat(orders): expose order cancellation over the API"
+bin/rubocop app/controllers/api/v1/orders_controller.rb app/controllers/api/v1/bookings_controller.rb app/policies/booking_policy.rb test/controllers/api/v1/orders_controller_test.rb
+git add app/controllers/api/v1/orders_controller.rb app/controllers/api/v1/bookings_controller.rb app/policies/booking_policy.rb config/routes.rb test/controllers/api/v1/orders_controller_test.rb test/controllers/api/v1/bookings_controller_test.rb
+git commit -m "feat(orders): expose order cancellation and retire per-booking cancel"
 ```
 
 ---
