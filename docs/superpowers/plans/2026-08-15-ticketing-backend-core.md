@@ -21,7 +21,7 @@
 - No test may make a real network call. Stripe is stubbed with WebMock throughout.
 - Ticket code format is exactly `EB-` followed by 12 Crockford base32 characters from the alphabet `0123456789ABCDEFGHJKMNPQRSTVWXYZ` (no I, L, O, U).
 - Order hold duration is exactly 15 minutes. Default cancel cutoff is 24 hours. Default max tickets per order is 10.
-- Run `bin/rubocop` before every commit; fix offences before committing.
+- Run `bin/rubocop` before every commit; fix offences before committing. **Migrations are exempt from `Metrics/AbcSize`, `Metrics/MethodLength`, and `Metrics/BlockLength`** — `.rubocop.yml` carries these exclusions, matching the pre-existing `BlockLength` precedent. Prescribed migration code is longer than 15 lines by nature; do not restructure a migration to satisfy a metrics cop, and do not relax any other cop without asking.
 
 ---
 
