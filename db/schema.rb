@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_26_220516) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_15_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -145,6 +145,30 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_26_220516) do
     t.index ["jti"], name: "index_jwt_denylists_on_jti"
   end
 
+  create_table "orders", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "event_id", null: false
+    t.string "status", default: "pending", null: false
+    t.decimal "total_amount", precision: 10, scale: 2, null: false
+    t.string "currency", limit: 3, default: "eur", null: false
+    t.string "stripe_checkout_session_id"
+    t.string "stripe_payment_intent_id"
+    t.string "payment_status", default: "unpaid", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "paid_at"
+    t.datetime "cancelled_at"
+    t.datetime "refunded_at"
+    t.string "refund_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id"], name: "index_orders_on_event_id"
+    t.index ["expires_at"], name: "index_orders_on_expires_at"
+    t.index ["status"], name: "index_orders_on_status"
+    t.index ["stripe_checkout_session_id"], name: "index_orders_on_stripe_checkout_session_id", unique: true
+    t.index ["stripe_payment_intent_id"], name: "index_orders_on_stripe_payment_intent_id", unique: true
+    t.index ["user_id"], name: "index_orders_on_user_id"
+  end
+
   create_table "ticket_types", force: :cascade do |t|
     t.bigint "event_id", null: false
     t.string "name", null: false
@@ -194,5 +218,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_26_220516) do
   add_foreign_key "invites", "events"
   add_foreign_key "invites", "users", column: "invitee_id"
   add_foreign_key "invites", "users", column: "inviter_id"
+  add_foreign_key "orders", "events"
+  add_foreign_key "orders", "users"
   add_foreign_key "ticket_types", "events"
 end
