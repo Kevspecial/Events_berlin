@@ -109,16 +109,17 @@ class TicketPurchaseFlowTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert ticket.reload.checked_in?
 
-    # 8. Cancelling refunds and releases inventory
+    # 8. Cancelling is refused once a ticket has already been used at the door
     @event.update!(date: 30.days.from_now)
     delete "/api/v1/orders/#{order_id}",
            params: { reason: 'change_of_plans' }, headers: auth_headers, as: :json
 
-    assert_response :success
+    assert_response :unprocessable_entity
+    assert_equal 'already_attended', response.parsed_body['code']
     order.reload
-    assert_equal 'cancelled', order.status
-    assert order.tickets.all?(&:cancelled?)
-    assert_equal 98, @ga.reload.available_quantity
+    assert_equal 'paid', order.status
+    assert order.tickets.none?(&:cancelled?)
+    assert_equal 96, @ga.reload.available_quantity
   end
   # rubocop:enable Metrics/BlockLength
 

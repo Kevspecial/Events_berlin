@@ -148,6 +148,29 @@ module Orders
       end
     end
 
+    test 'aggregates duplicate tier lines rather than overselling' do
+      @ga.update!(quantity: 3) # bookings(:one) already holds 2, so 1 remains
+
+      result = call([
+                      { ticket_type_id: @ga.id, quantity: 1 },
+                      { ticket_type_id: @ga.id, quantity: 1 }
+                    ])
+
+      assert_not result[:success], 'two lines of 1 must not slip past a stock of 1'
+      assert_equal :sold_out, result[:code]
+    end
+
+    test 'a duplicated tier becomes one booking with the summed quantity' do
+      result = call([
+                      { ticket_type_id: @ga.id, quantity: 2 },
+                      { ticket_type_id: @ga.id, quantity: 3 }
+                    ])
+
+      assert result[:success], result[:error]
+      assert_equal 1, result[:order].bookings.count
+      assert_equal 5, result[:order].bookings.first.quantity
+    end
+
     test 'locks each tier row before reading availability' do
       statements = []
       collector = ->(_name, _start, _finish, _id, payload) { statements << payload[:sql] }

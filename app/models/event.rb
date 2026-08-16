@@ -56,7 +56,12 @@ class Event < ApplicationRecord
     date - cancel_cutoff_hours.hours
   end
 
+  # A nil cancel_cutoff_hours means "no advance notice required", not
+  # "cancellable forever" — an event that has already started is never
+  # cancellable, regardless of cutoff configuration.
   def cancellable?(now = Time.current)
+    return false if date.present? && now >= date
+
     deadline = cancellable_until
     return true if deadline.nil?
 

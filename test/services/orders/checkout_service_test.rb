@@ -186,6 +186,19 @@ module Orders
       assert result[:success], result[:error]
     end
 
+    test 'locks the order row before creating a session' do
+      statements = []
+      collector = ->(_name, _start, _finish, _id, payload) { statements << payload[:sql] }
+
+      stub_session
+      ActiveSupport::Notifications.subscribed(collector, 'sql.active_record') do
+        Orders::CheckoutService.new(order: @order).call
+      end
+
+      assert(statements.any? { |sql| sql.include?('FOR UPDATE') },
+             'expected the order row to be locked across the Stripe call')
+    end
+
     test 'still refuses drift beyond the per-unit tolerance' do
       @order.update_column(:total_amount, @order.total_amount + 25) # rubocop:disable Rails/SkipsModelValidations
 

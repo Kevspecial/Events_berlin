@@ -38,15 +38,24 @@ module Orders
     def verify_cancellable
       order.with_lock do
         next failure(:not_cancellable, 'Only paid orders can be cancelled') unless order.paid?
+        next already_attended_failure if order.tickets.any?(&:checked_in?)
         next failure(:past_cutoff, cutoff_message) unless order.event.cancellable?
 
         nil
       end
     end
 
+    # Someone who has been admitted at the door has consumed the thing they
+    # paid for; refunding after that point is refunding a ticket that was
+    # used, not one that was merely bought.
+    def already_attended_failure
+      failure(:already_attended, 'This order has a ticket that was already checked in and cannot be refunded')
+    end
+
     def apply_cancellation
       ActiveRecord::Base.transaction do
-        order.update!(status: 'cancelled', cancelled_at: Time.current, refund_reason: reason)
+        order.update!(status: 'cancelled', cancelled_at: Time.current, refund_reason: reason,
+                      payment_status: 'refunded', refunded_at: Time.current)
         cancel_bookings_and_tickets
       end
     end

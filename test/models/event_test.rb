@@ -35,9 +35,10 @@ class EventTest < ActiveSupport::TestCase
     assert_not @event.cancellable?(@event.date + 1.hour)
   end
 
-  test 'cancellable? is always true when no cutoff is configured' do
+  test 'cancellable? requires no advance notice, but not after the event has started' do
     @event.update!(cancel_cutoff_hours: nil)
-    assert @event.cancellable?(@event.date + 1.hour)
+    assert @event.cancellable?(@event.date - 1.minute)
+    assert_not @event.cancellable?(@event.date + 1.hour)
   end
 
   test 'ticket_cap returns nil when uncapped' do

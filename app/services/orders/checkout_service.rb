@@ -15,6 +15,20 @@ module Orders
     end
 
     def call
+      order.with_lock { locked_call }
+    rescue Stripe::StripeError => e
+      Sentry.capture_exception(e) if defined?(Sentry)
+      failure(:stripe_error, e.message)
+    end
+
+    private
+
+    # Runs inside order.with_lock, which reloads the row before yielding, so
+    # the payability and existing-session checks below read fresh state. This
+    # covers the whole read-Stripe-create-persist sequence so two concurrent
+    # requests can't both observe a blank session id and both mint a live
+    # Stripe session for the same order.
+    def locked_call
       return failure(:not_payable, 'This order is no longer awaiting payment') unless payable?
 
       session = reusable_session || create_fresh_session
@@ -22,12 +36,7 @@ module Orders
 
       order.update!(stripe_checkout_session_id: session.id)
       { success: true, checkout_url: session.url, session_id: session.id }
-    rescue Stripe::StripeError => e
-      Sentry.capture_exception(e) if defined?(Sentry)
-      failure(:stripe_error, e.message)
     end
-
-    private
 
     def failure(code, message)
       { success: false, error: message, code: code }

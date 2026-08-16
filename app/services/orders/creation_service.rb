@@ -23,7 +23,7 @@ module Orders
     def initialize(user:, event:, items:)
       @user = user
       @event = event
-      @items = Array(items).map { |item| normalise(item) }
+      @items = aggregate(Array(items).map { |item| normalise(item) })
     end
 
     def call
@@ -56,6 +56,16 @@ module Orders
         ticket_type_id: (hash[:ticket_type_id] || hash['ticket_type_id']).to_i,
         quantity: (hash[:quantity] || hash['quantity']).to_i
       }
+    end
+
+    # Collapses multiple cart lines for the same tier into one, summing their
+    # quantities. Without this, validating and booking each line independently
+    # can't see the sibling lines about to consume the same stock, so a cart
+    # of [{tier, 5}, {tier, 5}] against a tier holding 5 would pass both
+    # per-line checks and oversell.
+    def aggregate(items)
+      items.group_by { |item| item[:ticket_type_id] }
+           .map { |ticket_type_id, group| { ticket_type_id: ticket_type_id, quantity: group.sum { |i| i[:quantity] } } }
     end
 
     def failure(code, message)

@@ -3,6 +3,8 @@
 require 'test_helper'
 
 module Orders
+  # rubocop:disable Metrics/ClassLength -- a test file with one example per
+  # behaviour is long by nature; splitting it would obscure the coverage map.
   class CancellationServiceTest < ActiveSupport::TestCase
     setup do
       @order = orders(:paid_one)
@@ -91,6 +93,17 @@ module Orders
       assert cancel[:success]
     end
 
+    test 'refuses to cancel when a ticket has already been checked in' do
+      @order.tickets.first.update!(status: 'checked_in', checked_in_at: Time.current)
+
+      result = cancel
+
+      assert_not result[:success]
+      assert_equal :already_attended, result[:code]
+      assert_equal 'paid', @order.reload.status
+      assert_not_requested :post, 'https://api.stripe.com/v1/refunds'
+    end
+
     test 'refuses an order that is not paid' do
       @order.update!(status: 'pending', payment_status: 'unpaid')
       result = cancel
@@ -132,4 +145,5 @@ module Orders
       assert(@order.tickets.none?(&:cancelled?))
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

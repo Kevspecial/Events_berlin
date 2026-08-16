@@ -40,10 +40,25 @@ module Api
         order = find_order_for(session)
         return if order.nil?
 
+        warn_on_session_mismatch(order, session)
+
         Orders::PaymentCompletionService.new(
           order: order,
           payment_intent_id: session.respond_to?(:payment_intent) ? session.payment_intent : nil
         ).call
+      end
+
+      # A completed session whose id doesn't match the order's stored session
+      # id means a second, unlinked Stripe session was created and paid for
+      # the same order — the signature of a double-charged buyer. This must
+      # never pass silently.
+      def warn_on_session_mismatch(order, session)
+        stored_id = order.stripe_checkout_session_id
+        return if stored_id.blank? || stored_id == session.id
+
+        message = "Order #{order.id} completed with session #{session.id} but had #{stored_id} on record"
+        Rails.logger.warn(message)
+        Sentry.capture_message(message, level: :warning) if defined?(Sentry)
       end
 
       def record_refund(charge)
@@ -52,6 +67,8 @@ module Api
 
         order = Order.find_by(stripe_payment_intent_id: intent)
         return if order.nil? || order.refunded?
+
+        return record_partial_refund(order, charge) unless full_refund?(charge)
 
         ActiveRecord::Base.transaction do
           order.update!(
@@ -62,6 +79,23 @@ module Api
           )
           void_tickets_for(order)
         end
+      end
+
+      # Stripe fires charge.refunded for partial refunds too. A goodwill
+      # refund of part of the order must not cancel every ticket on it, so
+      # only cascade when the refunded amount equals the charge amount.
+      def full_refund?(charge)
+        amount = charge.respond_to?(:amount) ? charge.amount : nil
+        amount_refunded = charge.respond_to?(:amount_refunded) ? charge.amount_refunded : nil
+        return true if amount.nil? || amount_refunded.nil?
+
+        amount_refunded >= amount
+      end
+
+      def record_partial_refund(order, charge)
+        message = "Order #{order.id} received a partial refund: #{charge.amount_refunded}/#{charge.amount}"
+        Rails.logger.info(message)
+        order.update!(refund_reason: message) if order.refund_reason.blank?
       end
 
       # A refunded order's tickets must be voided so they stop scanning at

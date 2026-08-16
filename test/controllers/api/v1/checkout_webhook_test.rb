@@ -77,6 +77,23 @@ module Api
         assert(order.bookings.all? { |b| b.status == 'cancelled' })
       end
 
+      test 'a partial refund does not void the order tickets' do
+        order = orders(:paid_one)
+        order.update!(stripe_payment_intent_id: 'pi_partial_hook')
+
+        charge_event = Stripe::Event.construct_from(
+          type: 'charge.refunded',
+          data: { object: { object: 'charge', payment_intent: 'pi_partial_hook',
+                            amount: 10_000, amount_refunded: 1_000 } }
+        )
+        post_webhook(charge_event)
+
+        assert_response :success
+        order.reload
+        assert_equal 'paid', order.status
+        assert(order.tickets.none?(&:cancelled?), 'a partial refund must not void tickets')
+      end
+
       test 'rejects an invalid signature' do
         Stripe::Webhook.stub(:construct_event, ->(*) { raise Stripe::SignatureVerificationError.new('bad', 'sig') }) do
           post '/api/v1/checkout/webhook',
