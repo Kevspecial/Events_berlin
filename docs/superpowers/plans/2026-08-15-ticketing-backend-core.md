@@ -2266,18 +2266,27 @@ class OrderExpiryJobTest < ActiveJob::TestCase
     assert_equal 'paid', order.reload.status
   end
 
-  test 'releases the inventory it was holding' do
+  # NOTE: the job does not itself release inventory — Order.holding_inventory
+  # already excludes a pending order the moment expires_at passes, so stock comes
+  # back through the passage of time. The job makes that state explicit. So this
+  # test captures the baseline BEFORE the booking exists, proves the hold is real
+  # while the order is live, and proves the stock is back after the sweep.
+  test 'a swept order leaves its inventory released' do
     order = orders(:pending_two)
+    baseline = ticket_types(:one).available_quantity
+
     order.bookings.create!(
       user: users(:two), event: events(:one),
       ticket_type: ticket_types(:one), quantity: 5, status: 'pending'
     )
-    order.update!(expires_at: 1.minute.ago)
+    assert_equal baseline - 5, ticket_types(:one).reload.available_quantity,
+                 'a live pending order should hold its stock'
 
-    before = ticket_types(:one).available_quantity
+    order.update!(expires_at: 1.minute.ago)
     OrderExpiryJob.perform_now
 
-    assert_equal before + 5, ticket_types(:one).reload.available_quantity
+    assert_equal baseline, ticket_types(:one).reload.available_quantity
+    assert_equal 'expired', order.reload.status
   end
 
   test 'cascades bookings to cancelled' do
