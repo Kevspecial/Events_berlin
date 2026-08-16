@@ -3,6 +3,7 @@
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
 require 'rails/test_help'
+require 'minitest/mock'
 require 'webmock/minitest'
 
 # No test may reach the network. Stripe is stubbed per-test.

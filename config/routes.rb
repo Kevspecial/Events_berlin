@@ -49,7 +49,7 @@ Rails.application.routes.draw do
       end
 
       # Stripe checkout endpoints
-      namespace :checkout do
+      scope 'checkout' do
         post 'webhook', to: 'checkout#webhook'
       end
 

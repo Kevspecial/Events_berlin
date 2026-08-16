@@ -30,46 +30,37 @@ module Api
       def handle_webhook_event(event)
         case event.type
         when 'checkout.session.completed'
-          handle_checkout_completed(event.data.object)
-        when 'payment_intent.succeeded'
-          handle_payment_succeeded(event.data.object)
-        when 'payment_intent.payment_failed'
-          handle_payment_failed(event.data.object)
-        else
-          Rails.logger.info "Unhandled Stripe event type: #{event.type}"
+          complete_order(event.data.object)
+        when 'charge.refunded'
+          record_refund(event.data.object)
         end
       end
 
-      def handle_checkout_completed(session)
-        booking = Booking.find_by(stripe_checkout_session_id: session.id)
-        return unless booking
+      def complete_order(session)
+        order = find_order_for(session)
+        return if order.nil?
 
-        booking.update!(
-          status: 'confirmed',
-          payment_status: 'paid',
-          stripe_payment_intent_id: session.payment_intent,
-          paid_at: Time.current
-        )
-
-        # Trigger confirmation email
-        BookingConfirmationJob.perform_later(booking.id)
+        Orders::PaymentCompletionService.new(
+          order: order,
+          payment_intent_id: session.respond_to?(:payment_intent) ? session.payment_intent : nil
+        ).call
       end
 
-      def handle_payment_succeeded(payment_intent)
-        booking = Booking.find_by(stripe_payment_intent_id: payment_intent.id)
-        return unless booking
+      def record_refund(charge)
+        intent = charge.respond_to?(:payment_intent) ? charge.payment_intent : nil
+        return if intent.blank?
 
-        booking.update!(
-          payment_status: 'paid',
-          paid_at: Time.current
-        )
+        order = Order.find_by(stripe_payment_intent_id: intent)
+        return if order.nil? || order.refunded?
+
+        order.update!(status: 'refunded', payment_status: 'refunded', refunded_at: Time.current)
       end
 
-      def handle_payment_failed(payment_intent)
-        booking = Booking.find_by(stripe_payment_intent_id: payment_intent.id)
-        return unless booking
+      def find_order_for(session)
+        id = session.metadata.respond_to?(:[]) ? session.metadata['order_id'] : nil
+        return Order.find_by(id: id) if id.present?
 
-        booking.update!(payment_status: 'failed')
+        Order.find_by(stripe_checkout_session_id: session.id)
       end
     end
   end
