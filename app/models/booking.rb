@@ -5,6 +5,7 @@ class Booking < ApplicationRecord
   belongs_to :event
   belongs_to :ticket_type
   belongs_to :order
+  has_many :tickets, dependent: :destroy
 
   validates :quantity, presence: true, numericality: { greater_than: 0, only_integer: true }
   validates :total_price, presence: true, numericality: { greater_than_or_equal_to: 0 }
