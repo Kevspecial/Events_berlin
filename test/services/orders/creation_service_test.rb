@@ -125,6 +125,21 @@ module Orders
       assert_not_nil result[:order].tickets_issued_at
     end
 
+    test 'a free order still succeeds when issuing its tickets fails' do
+      free_event = events(:two)
+      free_tier = TicketType.create!(event: free_event, name: 'Free', price: 0, quantity: 50)
+
+      failing = ->(*) { raise ActiveRecord::StatementInvalid, 'boom' }
+      failing_service = ->(*) { Struct.new(:call).new.tap { |s| s.define_singleton_method(:call, &failing) } }
+
+      Tickets::IssuanceService.stub(:new, failing_service) do
+        result = call([{ ticket_type_id: free_tier.id, quantity: 1 }], event: free_event)
+
+        assert result[:success], 'the buyer must still receive their order'
+        assert_equal 'paid', result[:order].status
+      end
+    end
+
     test 'writes nothing when any tier in the cart is unavailable' do
       @vip.update!(quantity: 0)
 

@@ -62,10 +62,16 @@ module Orders
       { success: false, error: message, code: code }
     end
 
+    # Issuance is idempotent and retryable, and the order is already committed
+    # by this point. A failure here must not cost the buyer their order id, so
+    # report it and let them through — the tickets can be issued again later.
     def issue_tickets_for_free_order(result)
-      return unless result[:success] && result[:order].paid?
+      return unless result[:success] && result[:order].free?
 
       Tickets::IssuanceService.new(order: result[:order]).call
+    rescue StandardError => e
+      Rails.logger.error("Failed to issue tickets for free order #{result[:order].id}: #{e.message}")
+      Sentry.capture_exception(e) if defined?(Sentry)
     end
 
     def validate_shape
@@ -127,12 +133,8 @@ module Orders
 
     def create_order(total, free)
       Order.create!(
-        user: user,
-        event: event,
-        status: free ? 'paid' : 'pending',
-        payment_status: free ? 'paid' : 'unpaid',
-        total_amount: total,
-        expires_at: Order.default_expiry,
+        user: user, event: event, total_amount: total, expires_at: Order.default_expiry,
+        status: free ? 'paid' : 'pending', payment_status: free ? 'paid' : 'unpaid',
         paid_at: free ? Time.current : nil
       )
     end
@@ -140,11 +142,8 @@ module Orders
     def create_bookings(order, tiers, free)
       items.each do |item|
         order.bookings.create!(
-          user: user,
-          event: event,
-          ticket_type: tiers[item[:ticket_type_id]],
-          quantity: item[:quantity],
-          status: free ? 'confirmed' : 'pending'
+          user: user, event: event, ticket_type: tiers[item[:ticket_type_id]],
+          quantity: item[:quantity], status: free ? 'confirmed' : 'pending'
         )
       end
     end
