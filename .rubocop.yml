@@ -24,11 +24,17 @@ Metrics/BlockLength:
     - 'db/schema.rb'
     - 'db/migrate/*.rb'
 
+Metrics/AbcSize:
+  Exclude:
+    - 'db/migrate/*.rb'
+
 Style/Documentation:
   Enabled: false
 
 Metrics/MethodLength:
   Max: 15
+  Exclude:
+    - 'db/migrate/*.rb'
 
 Metrics/CyclomaticComplexity:
   Max: 10

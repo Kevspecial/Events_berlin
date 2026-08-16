@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+paid_one:
+  user: one
+  event: one
+  status: paid
+  payment_status: paid
+  total_amount: 59.98
+  currency: eur
+  stripe_payment_intent_id: pi_test_paid_one
+  expires_at: <%= 15.minutes.from_now.to_fs(:db) %>
+  paid_at: <%= 1.hour.ago.to_fs(:db) %>
+
+pending_two:
+  user: two
+  event: one
+  status: pending
+  payment_status: unpaid
+  total_amount: 99.99
+  currency: eur
+  expires_at: <%= 15.minutes.from_now.to_fs(:db) %>

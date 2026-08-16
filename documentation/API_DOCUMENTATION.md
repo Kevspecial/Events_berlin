@@ -162,3 +162,42 @@ Tests included for:
 - Models (validations, associations)
 - Controllers (API endpoints)
 - Policies (authorization rules)
+
+## Orders
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/v1/events/:event_id/orders` | Bearer | Create a pending order from a cart of `{ticket_type_id, quantity}` items. Free events return a `paid` order immediately. |
+| `GET` | `/api/v1/orders` | Bearer | List the caller's orders, paginated. |
+| `GET` | `/api/v1/orders/:id` | Bearer | Order detail including bookings and tickets. |
+| `POST` | `/api/v1/orders/:id/checkout` | Bearer | Create a Stripe Checkout Session; returns `checkout_url`. |
+| `DELETE` | `/api/v1/orders/:id` | Bearer | Cancel and refund. Refused past the event's cancellation cutoff. |
+
+### Order states
+
+`pending` → `paid` | `expired` | `cancelled` | `refunded`
+
+A pending order holds inventory for 15 minutes. `OrderExpiryJob` sweeps lapsed orders every minute.
+
+### Error codes
+
+Creation (`POST /api/v1/events/:event_id/orders`): `invalid_items`, `event_past`, `cap_exceeded`, `sold_out`
+
+Checkout (`POST /api/v1/orders/:id/checkout`): `not_payable`, `payment_in_progress`, `amount_mismatch`, `stripe_error`
+
+Payment completion (webhook): `not_completable`
+
+Cancellation (`DELETE /api/v1/orders/:id`): `not_cancellable`, `past_cutoff`, `refund_failed`
+
+## Tickets
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/v1/tickets/:code` | Organiser | Validate a ticket without consuming it. |
+| `GET` | `/api/v1/tickets/:code/download` | Holder | Download the ticket as a PDF with an embedded QR code. |
+| `POST` | `/api/v1/tickets/:code/check_in` | Organiser | Consume the ticket at the door. Returns `409` if already used. |
+
+Check-in error codes: `cancelled`, `already_checked_in`, `event_not_started`.
+
+Ticket codes are `EB-` followed by 12 Crockford base32 characters, e.g. `EB-A7X9K2M4P8Q3`.
+The QR encodes the bare code, so any scanner can read it offline.

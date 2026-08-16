@@ -6,26 +6,6 @@ module Api
       skip_before_action :authenticate_user!, only: [:webhook]
       skip_before_action :verify_authenticity_token, only: [:webhook], raise: false
 
-      # POST /api/v1/checkout/sessions
-      # Creates a Stripe Checkout Session for a booking
-      def create
-        booking = current_user.bookings.find(params[:booking_id])
-
-        unless booking.pending? && booking.payment_status == 'unpaid'
-          return render json: { error: 'Booking is not eligible for payment' }, status: :unprocessable_entity
-        end
-
-        session = create_checkout_session(booking)
-        booking.update!(stripe_checkout_session_id: session.id)
-
-        render json: {
-          checkout_url: session.url,
-          session_id: session.id
-        }
-      rescue Stripe::StripeError => e
-        render json: { error: e.message }, status: :unprocessable_entity
-      end
-
       # POST /api/v1/checkout/webhook
       # Handles Stripe webhook events
       def webhook
@@ -47,79 +27,93 @@ module Api
 
       private
 
-      def create_checkout_session(booking)
-        frontend_url = ENV.fetch('FRONTEND_URL', 'http://localhost:3001')
-
-        Stripe::Checkout::Session.create(
-          mode: 'payment',
-          customer_email: current_user.email,
-          line_items: [{
-            price_data: {
-              currency: 'eur',
-              product_data: {
-                name: "#{booking.event.name} - #{booking.ticket_type.name}",
-                description: "#{booking.quantity}x ticket(s) for #{booking.event.name}",
-                metadata: {
-                  event_id: booking.event.id,
-                  ticket_type_id: booking.ticket_type.id
-                }
-              },
-              unit_amount: (booking.ticket_type.price * 100).to_i
-            },
-            quantity: booking.quantity
-          }],
-          metadata: {
-            booking_id: booking.id,
-            user_id: current_user.id
-          },
-          success_url: "#{frontend_url}/checkout/success?session_id={CHECKOUT_SESSION_ID}",
-          cancel_url: "#{frontend_url}/checkout/cancel?booking_id=#{booking.id}"
-        )
-      end
-
       def handle_webhook_event(event)
         case event.type
         when 'checkout.session.completed'
-          handle_checkout_completed(event.data.object)
-        when 'payment_intent.succeeded'
-          handle_payment_succeeded(event.data.object)
-        when 'payment_intent.payment_failed'
-          handle_payment_failed(event.data.object)
-        else
-          Rails.logger.info "Unhandled Stripe event type: #{event.type}"
+          complete_order(event.data.object)
+        when 'charge.refunded'
+          record_refund(event.data.object)
         end
       end
 
-      def handle_checkout_completed(session)
-        booking = Booking.find_by(stripe_checkout_session_id: session.id)
-        return unless booking
+      def complete_order(session)
+        order = find_order_for(session)
+        return if order.nil?
 
-        booking.update!(
-          status: 'confirmed',
-          payment_status: 'paid',
-          stripe_payment_intent_id: session.payment_intent,
-          paid_at: Time.current
-        )
+        warn_on_session_mismatch(order, session)
 
-        # Trigger confirmation email
-        BookingConfirmationJob.perform_later(booking.id)
+        Orders::PaymentCompletionService.new(
+          order: order,
+          payment_intent_id: session.respond_to?(:payment_intent) ? session.payment_intent : nil
+        ).call
       end
 
-      def handle_payment_succeeded(payment_intent)
-        booking = Booking.find_by(stripe_payment_intent_id: payment_intent.id)
-        return unless booking
+      # A completed session whose id doesn't match the order's stored session
+      # id means a second, unlinked Stripe session was created and paid for
+      # the same order — the signature of a double-charged buyer. This must
+      # never pass silently.
+      def warn_on_session_mismatch(order, session)
+        stored_id = order.stripe_checkout_session_id
+        return if stored_id.blank? || stored_id == session.id
 
-        booking.update!(
-          payment_status: 'paid',
-          paid_at: Time.current
-        )
+        message = "Order #{order.id} completed with session #{session.id} but had #{stored_id} on record"
+        Rails.logger.warn(message)
+        Sentry.capture_message(message, level: :warning) if defined?(Sentry)
       end
 
-      def handle_payment_failed(payment_intent)
-        booking = Booking.find_by(stripe_payment_intent_id: payment_intent.id)
-        return unless booking
+      def record_refund(charge)
+        intent = charge.respond_to?(:payment_intent) ? charge.payment_intent : nil
+        return if intent.blank?
 
-        booking.update!(payment_status: 'failed')
+        order = Order.find_by(stripe_payment_intent_id: intent)
+        return if order.nil? || order.refunded?
+
+        return record_partial_refund(order, charge) unless full_refund?(charge)
+
+        ActiveRecord::Base.transaction do
+          order.update!(
+            status: 'refunded',
+            payment_status: 'refunded',
+            refunded_at: Time.current,
+            cancelled_at: order.cancelled_at || Time.current
+          )
+          void_tickets_for(order)
+        end
+      end
+
+      # Stripe fires charge.refunded for partial refunds too. A goodwill
+      # refund of part of the order must not cancel every ticket on it, so
+      # only cascade when the refunded amount equals the charge amount.
+      def full_refund?(charge)
+        amount = charge.respond_to?(:amount) ? charge.amount : nil
+        amount_refunded = charge.respond_to?(:amount_refunded) ? charge.amount_refunded : nil
+        return true if amount.nil? || amount_refunded.nil?
+
+        amount_refunded >= amount
+      end
+
+      def record_partial_refund(order, charge)
+        message = "Order #{order.id} received a partial refund: #{charge.amount_refunded}/#{charge.amount}"
+        Rails.logger.info(message)
+        order.update!(refund_reason: message) if order.refund_reason.blank?
+      end
+
+      # A refunded order's tickets must be voided so they stop scanning at
+      # the door, and a validation failure on that bulk transition must not
+      # block the refund from being recorded.
+      # rubocop:disable Rails/SkipsModelValidations
+      def void_tickets_for(order)
+        order.bookings.update_all(status: 'cancelled', updated_at: Time.current)
+        Ticket.where(booking_id: order.bookings.select(:id))
+              .update_all(status: 'cancelled', cancelled_at: Time.current, updated_at: Time.current)
+      end
+      # rubocop:enable Rails/SkipsModelValidations
+
+      def find_order_for(session)
+        id = session.metadata.respond_to?(:[]) ? session.metadata['order_id'] : nil
+        return Order.find_by(id: id) if id.present?
+
+        Order.find_by(stripe_checkout_session_id: session.id)
       end
     end
   end

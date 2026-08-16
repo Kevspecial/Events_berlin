@@ -1,6 +1,7 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  order: paid_one
   user: one
   event: one
   ticket_type: one
@@ -9,6 +10,7 @@ one:
   status: confirmed
 
 two:
+  order: pending_two
   user: two
   event: one
   ticket_type: two

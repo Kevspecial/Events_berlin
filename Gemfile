@@ -52,12 +52,17 @@ gem 'active_model_serializers', '~> 0.10.0'
 
 # Background jobs with Sidekiq
 gem 'sidekiq', '~> 7.0'
+gem 'sidekiq-cron', '~> 1.12'
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem 'image_processing', '~> 1.2'
 
 # Stripe for payment processing
 gem 'stripe', '~> 10.0'
+
+# PDF ticket generation with embedded QR codes
+gem 'prawn', '~> 2.4'
+gem 'prawn-qrcode', '~> 0.5'
 
 # Pagination
 gem 'pagy', '~> 8.0'
@@ -110,4 +115,6 @@ group :test do
   gem 'capybara'
   gem 'selenium-webdriver'
   gem 'webdrivers'
+  gem 'webmock', '~> 3.19'
+  gem 'pdf-inspector', '~> 1.3', require: 'pdf/inspector'
 end

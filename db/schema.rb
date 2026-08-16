@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_26_220516) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_15_120400) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -90,7 +90,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_26_220516) do
     t.string "stripe_payment_intent_id"
     t.string "payment_status", default: "unpaid"
     t.datetime "paid_at"
+    t.bigint "order_id", null: false
     t.index ["event_id"], name: "index_bookings_on_event_id"
+    t.index ["order_id"], name: "index_bookings_on_order_id"
     t.index ["payment_status"], name: "index_bookings_on_payment_status"
     t.index ["status"], name: "index_bookings_on_status"
     t.index ["stripe_checkout_session_id"], name: "index_bookings_on_stripe_checkout_session_id", unique: true
@@ -121,6 +123,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_26_220516) do
     t.bigint "venue_id"
     t.decimal "price", precision: 10, scale: 2
     t.integer "capacity"
+    t.integer "cancel_cutoff_hours", default: 24
+    t.integer "max_tickets_per_order", default: 10
     t.index ["category_id"], name: "index_events_on_category_id"
     t.index ["creator_id"], name: "index_events_on_creator_id"
     t.index ["date"], name: "index_events_on_date"
@@ -145,6 +149,33 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_26_220516) do
     t.index ["jti"], name: "index_jwt_denylists_on_jti"
   end
 
+  create_table "orders", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "event_id", null: false
+    t.string "status", default: "pending", null: false
+    t.decimal "total_amount", precision: 10, scale: 2, null: false
+    t.string "currency", limit: 3, default: "eur", null: false
+    t.string "stripe_checkout_session_id"
+    t.string "stripe_payment_intent_id"
+    t.string "payment_status", default: "unpaid", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "paid_at"
+    t.datetime "cancelled_at"
+    t.datetime "refunded_at"
+    t.string "refund_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "backfill_booking_id"
+    t.datetime "tickets_issued_at"
+    t.index ["backfill_booking_id"], name: "index_orders_on_backfill_booking_id"
+    t.index ["event_id"], name: "index_orders_on_event_id"
+    t.index ["expires_at"], name: "index_orders_on_expires_at"
+    t.index ["status"], name: "index_orders_on_status"
+    t.index ["stripe_checkout_session_id"], name: "index_orders_on_stripe_checkout_session_id", unique: true
+    t.index ["stripe_payment_intent_id"], name: "index_orders_on_stripe_payment_intent_id", unique: true
+    t.index ["user_id"], name: "index_orders_on_user_id"
+  end
+
   create_table "ticket_types", force: :cascade do |t|
     t.bigint "event_id", null: false
     t.string "name", null: false
@@ -155,6 +186,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_26_220516) do
     t.datetime "updated_at", null: false
     t.index ["event_id", "name"], name: "index_ticket_types_on_event_id_and_name"
     t.index ["event_id"], name: "index_ticket_types_on_event_id"
+  end
+
+  create_table "tickets", force: :cascade do |t|
+    t.bigint "booking_id", null: false
+    t.string "code", limit: 15, null: false
+    t.string "status", default: "issued", null: false
+    t.datetime "checked_in_at"
+    t.bigint "checked_in_by_id"
+    t.datetime "cancelled_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["booking_id", "status"], name: "index_tickets_on_booking_id_and_status"
+    t.index ["booking_id"], name: "index_tickets_on_booking_id"
+    t.index ["checked_in_by_id"], name: "index_tickets_on_checked_in_by_id"
+    t.index ["code"], name: "index_tickets_on_code", unique: true
+    t.index ["status"], name: "index_tickets_on_status"
   end
 
   create_table "users", force: :cascade do |t|
@@ -186,6 +233,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_26_220516) do
   add_foreign_key "attendings", "events", column: "attended_event_id"
   add_foreign_key "attendings", "users", column: "attendee_id"
   add_foreign_key "bookings", "events"
+  add_foreign_key "bookings", "orders"
   add_foreign_key "bookings", "ticket_types"
   add_foreign_key "bookings", "users"
   add_foreign_key "events", "categories"
@@ -194,5 +242,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_26_220516) do
   add_foreign_key "invites", "events"
   add_foreign_key "invites", "users", column: "invitee_id"
   add_foreign_key "invites", "users", column: "inviter_id"
+  add_foreign_key "orders", "events"
+  add_foreign_key "orders", "users"
   add_foreign_key "ticket_types", "events"
+  add_foreign_key "tickets", "bookings"
+  add_foreign_key "tickets", "users", column: "checked_in_by_id"
 end

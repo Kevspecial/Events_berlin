@@ -30,21 +30,29 @@ Rails.application.routes.draw do
       delete 'logout', to: 'sessions#destroy'
 
       resources :events do
-        resources :bookings, only: [:create]
+        resources :orders, only: [:create]
+      end
+
+      resources :orders, only: %i[index show destroy] do
+        member do
+          post :checkout
+        end
+      end
+
+      resources :tickets, only: [:show], param: :code do
+        member do
+          get :download
+          post :check_in
+        end
       end
 
       resources :categories, only: [:index]
       resources :venues, only: [:index]
 
-      resources :bookings, only: %i[index show update] do
-        member do
-          patch :cancel
-        end
-      end
+      resources :bookings, only: %i[index show]
 
       # Stripe checkout endpoints
-      namespace :checkout do
-        post 'sessions', to: 'checkout#create'
+      scope 'checkout' do
         post 'webhook', to: 'checkout#webhook'
       end
 

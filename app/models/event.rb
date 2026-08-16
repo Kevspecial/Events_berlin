@@ -20,12 +20,17 @@ class Event < ApplicationRecord
   has_many :bookings, dependent: :destroy
   has_many :ticket_types, dependent: :destroy
   has_many :ticket_buyers, through: :bookings, source: :user
+  has_many :orders, dependent: :destroy
 
   validates :name, presence: true
   validates :location, presence: true
   validates :date, presence: true
   validates :price, numericality: { greater_than_or_equal_to: 0, allow_nil: true }
   validates :capacity, numericality: { greater_than: 0, only_integer: true, allow_nil: true }
+  validates :cancel_cutoff_hours,
+            numericality: { greater_than_or_equal_to: 0, only_integer: true, allow_nil: true }
+  validates :max_tickets_per_order,
+            numericality: { greater_than: 0, only_integer: true, allow_nil: true }
 
   # Scopes for filtering
   scope :upcoming, -> { where(date: Time.current..).order(date: :asc) }
@@ -40,12 +45,37 @@ class Event < ApplicationRecord
   def available_capacity
     return nil unless capacity
 
-    capacity - bookings.where(status: %w[confirmed pending]).sum(:quantity)
+    [capacity - bookings.holding_inventory.sum(:quantity), 0].max
+  end
+
+  # The instant after which cancellation is refused. Nil means cancellation
+  # is always permitted.
+  def cancellable_until
+    return nil if cancel_cutoff_hours.nil?
+
+    date - cancel_cutoff_hours.hours
+  end
+
+  # A nil cancel_cutoff_hours means "no advance notice required", not
+  # "cancellable forever" — an event that has already started is never
+  # cancellable, regardless of cutoff configuration.
+  def cancellable?(now = Time.current)
+    return false if date.present? && now >= date
+
+    deadline = cancellable_until
+    return true if deadline.nil?
+
+    now < deadline
+  end
+
+  def ticket_cap
+    max_tickets_per_order
   end
 
   # Define searchable attributes for Ransack (used by Active Admin)
   def self.ransackable_attributes(_auth_object = nil)
-    %w[capacity created_at date description id location name price private updated_at]
+    %w[cancel_cutoff_hours capacity created_at date description id location
+       max_tickets_per_order name price private updated_at]
   end
 
   # Define searchable associations for Ransack
