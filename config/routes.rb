@@ -39,9 +39,10 @@ Rails.application.routes.draw do
         end
       end
 
-      resources :tickets, only: [], param: :code do
+      resources :tickets, only: [:show], param: :code do
         member do
           get :download
+          post :check_in
         end
       end
 
