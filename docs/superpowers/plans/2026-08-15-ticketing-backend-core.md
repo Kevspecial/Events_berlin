@@ -2452,8 +2452,15 @@ require 'test_helper'
 
 module Tickets
   class IssuanceServiceTest < ActiveSupport::TestCase
+    # Build a clean order rather than reusing orders(:pending_two): that fixture
+    # already carries a booking and tickets from earlier tasks, and any count
+    # assertion against it would be fighting inherited state.
     setup do
-      @order = orders(:pending_two)
+      @order = Order.create!(
+        user: users(:two), event: events(:one),
+        status: 'pending', payment_status: 'unpaid',
+        total_amount: 0, expires_at: Order.default_expiry
+      )
       @order.bookings.create!(
         user: users(:two), event: events(:one),
         ticket_type: ticket_types(:one), quantity: 3, status: 'confirmed'
@@ -2462,7 +2469,10 @@ module Tickets
         user: users(:two), event: events(:one),
         ticket_type: ticket_types(:two), quantity: 2, status: 'confirmed'
       )
-      @order.update!(status: 'paid', payment_status: 'paid', paid_at: Time.current)
+      @order.update!(
+        total_amount: @order.bookings.sum(:total_price),
+        status: 'paid', payment_status: 'paid', paid_at: Time.current
+      )
     end
 
     test 'creates one ticket per unit of quantity across every booking' do
@@ -2593,11 +2603,23 @@ module Tickets
       ActiveRecord::Base.transaction(requires_new: true) do
         booking.tickets.create!
       end
-    rescue ActiveRecord::RecordNotUnique
+    rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid => e
+      raise unless code_collision?(e)
+
       attempts -= 1
       raise if attempts.zero?
 
       retry
+    end
+
+    # A duplicate code surfaces two ways: Ticket's uniqueness validation catches
+    # the common case before the insert, and RecordNotUnique catches the genuine
+    # race where two processes clear that check at the same instant. Any other
+    # validation failure must propagate rather than be retried into oblivion.
+    def code_collision?(error)
+      return true if error.is_a?(ActiveRecord::RecordNotUnique)
+
+      error.record.errors.of_kind?(:code, :taken)
     end
   end
 end
