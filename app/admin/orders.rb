@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
 ActiveAdmin.register Order do
-  permit_params :status, :payment_status, :refund_reason
+  # status and payment_status must never be editable here: order state transitions go
+  # through the service objects (Orders::CancellationService, Orders::PaymentCompletionService)
+  # so refunds, ticket cascades, and issuance stay consistent. A form edit would bypass all of
+  # that - e.g. marking an order 'refunded' without touching Stripe or its tickets.
+  permit_params :refund_reason
 
   filter :status, as: :select, collection: Order::STATUSES
   filter :payment_status, as: :select, collection: Order::PAYMENT_STATUSES
@@ -60,5 +64,15 @@ ActiveAdmin.register Order do
         column :checked_in_by
       end
     end
+  end
+
+  # Without this, ActiveAdmin's default form would still render status/payment_status
+  # inputs (since they're regular columns) even though permit_params no longer accepts
+  # them - a misleading UI where an admin's selection is silently dropped on save.
+  form do |f|
+    f.inputs 'Order' do
+      f.input :refund_reason
+    end
+    f.actions
   end
 end

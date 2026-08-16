@@ -271,3 +271,35 @@ Each state transition lives in one service under `app/services/`:
 | `Tickets::IssuanceService` | paid order → ticket rows (idempotent) |
 | `Tickets::PdfRenderer` | ticket → PDF bytes |
 | `Tickets::CheckInService` | issued → checked_in (row-locked) |
+
+### Traps
+
+A few corners of the ticketing flow look inconsistent at first glance but are intentional.
+Read these before "fixing" them:
+
+- **Free orders never see the webhook.** `Orders::CreationService` creates a zero-total order
+  already `paid` and issues its tickets synchronously, in-process, rather than waiting on a
+  Stripe webhook - because a $0 order never goes through Stripe checkout, so no webhook will
+  ever arrive for it. That synchronous issuance call is deliberately non-fatal: if it raises,
+  the failure is logged and reported to Sentry but the order creation still succeeds and the
+  buyer still gets their order. This is safe because `Tickets::IssuanceService` is idempotent
+  and retryable, so a failed synchronous attempt just means the tickets get issued on the next
+  successful call instead of blocking the purchase. A newcomer who only reads the webhook path
+  (`Orders::PaymentCompletionService`) will conclude that all issuance is webhook-driven and
+  miss this second entry point entirely.
+
+- **An expired order can still be paid.** The 15-minute hold represented by `expires_at` exists
+  to release inventory back to other buyers, not to invalidate a payment that has already
+  landed. `Orders::PaymentCompletionService` deliberately accepts an order whose hold has
+  already lapsed: if Stripe confirms the charge, the buyer's money arrived, and honouring the
+  sale is better than refunding a successful payment because the webhook was a few seconds
+  late. The trade-off this accepts is a narrow oversell window - inventory freed by the
+  expiry could theoretically be resold to someone else in the gap before this late payment
+  completes. That window is a known, intentional cost of the design, not a bug to close.
+
+- **Refund safety comes from a Stripe idempotency key, not a lock.** `Orders::CancellationService`
+  sends every refund request with `idempotency_key: "order-<id>-refund"` rather than
+  serializing cancellation with a database lock. Two concurrent cancel requests for the same
+  order can both reach Stripe; it's the idempotency key, not application-level locking, that
+  collapses them into a single refund instead of two. Anyone touching that Stripe call must
+  preserve the key (or an equivalent) or they reintroduce a double-refund path.
