@@ -17,7 +17,11 @@ class Booking < ApplicationRecord
   scope :pending, -> { where(status: 'pending') }
   scope :cancelled, -> { where(status: 'cancelled') }
   scope :paid, -> { where(payment_status: 'paid') }
-  scope :holding_inventory, -> { joins(:order).merge(Order.holding_inventory) }
+  # An order-level hold is necessary but not sufficient: a booking cancelled on
+  # its own must stop holding stock even while its order is still live.
+  scope :holding_inventory, lambda {
+    joins(:order).merge(Order.holding_inventory).where.not(status: 'cancelled')
+  }
 
   # Status check methods
   def pending?

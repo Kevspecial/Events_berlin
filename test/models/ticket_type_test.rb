@@ -56,4 +56,15 @@ class TicketTypeTest < ActiveSupport::TestCase
     orders(:pending_two).update!(expires_at: 1.minute.ago)
     assert_equal 498, event.reload.available_capacity
   end
+
+  test 'available_quantity releases stock from a booking cancelled on its own' do
+    # bookings(:one) holds 2 against a paid order. Cancelling just that booking,
+    # leaving the order paid, must return its stock to the pool.
+    assert_equal 98, @ticket_type.available_quantity
+
+    bookings(:one).update!(status: 'cancelled')
+
+    assert_equal 100, @ticket_type.reload.available_quantity
+    assert_equal 'paid', orders(:paid_one).reload.status
+  end
 end
