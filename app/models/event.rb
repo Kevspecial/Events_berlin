@@ -45,7 +45,7 @@ class Event < ApplicationRecord
   def available_capacity
     return nil unless capacity
 
-    capacity - bookings.where(status: %w[confirmed pending]).sum(:quantity)
+    [capacity - bookings.holding_inventory.sum(:quantity), 0].max
   end
 
   # The instant after which cancellation is refused. Nil means cancellation
