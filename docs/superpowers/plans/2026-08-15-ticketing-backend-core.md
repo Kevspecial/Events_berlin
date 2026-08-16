@@ -477,17 +477,48 @@ two:
   status: pending
 ```
 
-- [ ] **Step 7: Run the full model suite to verify nothing regressed**
+- [ ] **Step 7: Retire the legacy booking write endpoints**
 
-Run: `bin/rails test test/models/`
-Expected: PASS — every model test green, including the pre-existing `user_test.rb` and `category_test.rb`
+A `Booking` can no longer exist without an `Order`, so `BookingsController#create` — which builds a bare booking — is now permanently broken. The old `CheckoutController#create` has the same problem: it takes a `booking_id` and pays for a single booking, a shape that no longer exists. Both are removed here rather than left returning 422.
 
-- [ ] **Step 8: Lint and commit**
+In `app/controllers/api/v1/bookings_controller.rb`, delete the entire `create` action and the entire `update` action. Keep `index`, `show`, and `cancel`. Then narrow `booking_params` to what `cancel` still needs by deleting the `booking_params` private method entirely (neither remaining action uses it).
+
+In `config/routes.rb`, remove `resources :bookings, only: [:create]` from inside the `resources :events do` block, leaving:
+
+```ruby
+      resources :events do
+        resources :orders, only: [:create]
+      end
+```
+
+In `app/controllers/api/v1/checkout_controller.rb`, delete the entire `create` action and the entire private `create_checkout_session` method. Keep `webhook` and its private helpers — Task 9 rewrites those.
+
+In `config/routes.rb`, remove the `post 'sessions', to: 'checkout#create'` line, leaving:
+
+```ruby
+      namespace :checkout do
+        post 'webhook', to: 'checkout#webhook'
+      end
+```
+
+- [ ] **Step 8: Remove the tests for the deleted endpoints**
+
+In `test/controllers/api/v1/bookings_controller_test.rb`, delete the `should create booking` test and any test exercising `update`. Keep the `index` and `show` tests.
+
+Run: `grep -rn "api_v1_event_bookings_url\|checkout_sessions\|checkout/sessions" test/ app/ config/ || echo "No references remain."`
+Expected: `No references remain.`
+
+- [ ] **Step 9: Run the full model and controller suites**
+
+Run: `bin/rails test test/models/ test/controllers/`
+Expected: PASS — every test green. The frontend's booking flow is now intentionally unsupported; Plan 2 rebuilds it against orders.
+
+- [ ] **Step 10: Lint and commit**
 
 ```bash
-bin/rubocop app/models/booking.rb test/models/booking_test.rb db/migrate/20260815120100_add_order_to_bookings.rb
-git add db/migrate/20260815120100_add_order_to_bookings.rb db/schema.rb app/models/booking.rb test/models/booking_test.rb test/fixtures/bookings.yml
-git commit -m "feat(orders): link bookings to orders and backfill historical rows"
+bin/rubocop app/models/booking.rb app/controllers/api/v1/bookings_controller.rb app/controllers/api/v1/checkout_controller.rb test/models/booking_test.rb db/migrate/20260815120100_add_order_to_bookings.rb
+git add db/migrate/20260815120100_add_order_to_bookings.rb db/schema.rb app/models/booking.rb app/controllers/api/v1/bookings_controller.rb app/controllers/api/v1/checkout_controller.rb config/routes.rb test/models/booking_test.rb test/fixtures/bookings.yml test/controllers/api/v1/bookings_controller_test.rb
+git commit -m "feat(orders): link bookings to orders and retire booking-scoped purchase endpoints"
 ```
 
 ---
@@ -4321,4 +4352,13 @@ These are deliberately deferred to follow-up plans, per the source spec:
 - **Waitlist** (spec phase 7) — `waitlist_entries`, promotion and claim services, offer mailer, expiry job. Plan 3.
 - **Column cleanup** (spec phase 8) — dropping `stripe_checkout_session_id`, `stripe_payment_intent_id`, `payment_status`, and `paid_at` from `bookings` once the new code has run in production. Plan 3.
 
-Legacy `POST /api/v1/events/:event_id/bookings` and `PATCH /api/v1/bookings/:id/cancel` are left routed and working throughout this plan so the existing frontend keeps functioning; they are removed in Plan 2 once the frontend has migrated to orders.
+## Known breakage between Plan 1 and Plan 2
+
+A `Booking` cannot exist without an `Order` after Task 2, so the booking-scoped purchase endpoints are removed in that task rather than left returning 422:
+
+- `POST /api/v1/events/:event_id/bookings` — replaced by `POST /api/v1/events/:event_id/orders`
+- `POST /api/v1/checkout/sessions` — replaced by `POST /api/v1/orders/:id/checkout`
+
+`GET /api/v1/bookings`, `GET /api/v1/bookings/:id`, and `PATCH /api/v1/bookings/:id/cancel` remain routed and working.
+
+The existing frontend calls both removed endpoints from `frontend/src/services/bookingService.ts`, so **the frontend purchase flow is non-functional for the duration of this plan**. Plan 2 rebuilds it against orders. This is a deliberate trade: carrying a shim that maps the old single-booking shape onto orders would mean building and testing a code path that Plan 2 deletes.
