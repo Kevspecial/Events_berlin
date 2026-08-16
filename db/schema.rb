@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_15_120200) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_15_120300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -123,6 +123,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_15_120200) do
     t.bigint "venue_id"
     t.decimal "price", precision: 10, scale: 2
     t.integer "capacity"
+    t.integer "cancel_cutoff_hours", default: 24
+    t.integer "max_tickets_per_order", default: 10
     t.index ["category_id"], name: "index_events_on_category_id"
     t.index ["creator_id"], name: "index_events_on_creator_id"
     t.index ["date"], name: "index_events_on_date"

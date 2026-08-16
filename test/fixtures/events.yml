@@ -11,6 +11,8 @@ one:
   venue: berlin_arena
   price: 29.99
   capacity: 500
+  cancel_cutoff_hours: 24
+  max_tickets_per_order: 10
 
 two:
   name: Tech Meetup Berlin
@@ -23,3 +25,5 @@ two:
   venue: small_hall
   price: 0.00
   capacity: 100
+  cancel_cutoff_hours: 24
+  max_tickets_per_order: 4
