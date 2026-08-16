@@ -234,3 +234,40 @@ Potential future architectural changes:
 | Payment | Financial record attached to a Booking; statuses: `unpaid`, `paid`, `failed`, `refunded` |
 | Organizer | A `User` with `role: organizer` — can create and manage events |
 | PRD | Product Requirements Document — defines v1 scope at `documentation/PRD.md` |
+
+## Ticketing domain
+
+```
+User ──< Order ──< Booking ──< Ticket
+              │        │
+Event ────────┘        └── TicketType
+  └──< TicketType
+```
+
+- **Order** — the payment. One order equals one Stripe session and one confirmation email.
+- **Booking** — a line item: one ticket tier and a quantity within an order.
+- **Ticket** — the scanable unit. One row per admitted person, with its own code and check-in state.
+
+### Inventory
+
+`Order.holding_inventory` is the source of truth for whether an order still holds stock: an
+order holds inventory while it is `paid`, or `pending` and not yet past `expires_at`.
+`Booking.holding_inventory` builds on it — it joins to `Order.holding_inventory` and additionally
+excludes bookings cancelled on their own, since a booking can be cancelled independently of its
+order. `TicketType#available_quantity` and `Event#available_capacity` both derive from
+`Booking.holding_inventory`, so an abandoned cart releases its stock automatically when the hold
+lapses — no cleanup job is required for correctness.
+
+### Services
+
+Each state transition lives in one service under `app/services/`:
+
+| Service | Transition |
+|---------|-----------|
+| `Orders::CreationService` | cart → pending order (or paid, when free) |
+| `Orders::CheckoutService` | pending order → Stripe session |
+| `Orders::PaymentCompletionService` | webhook → paid + issuance (idempotent) |
+| `Orders::CancellationService` | paid → cancelled + refund |
+| `Tickets::IssuanceService` | paid order → ticket rows (idempotent) |
+| `Tickets::PdfRenderer` | ticket → PDF bytes |
+| `Tickets::CheckInService` | issued → checked_in (row-locked) |

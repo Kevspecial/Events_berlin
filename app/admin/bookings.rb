@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 ActiveAdmin.register Booking do
   # Permit parameters for forms
   permit_params :user_id, :event_id, :ticket_type_id, :quantity, :status
@@ -6,6 +8,7 @@ ActiveAdmin.register Booking do
   index do
     selectable_column
     id_column
+    column(:order) { |booking| booking.order&.reference }
     column :user
     column :event
     column :ticket_type
@@ -20,6 +23,7 @@ ActiveAdmin.register Booking do
   show do
     attributes_table do
       row :id
+      row(:order) { |booking| booking.order&.reference }
       row :user
       row :event
       row :ticket_type
