@@ -16,18 +16,26 @@ module Orders
     end
 
     def call
-      early_result = order.with_lock do
-        next { success: true, order: order } if order.paid?
-        next failure(:not_completable, 'This order can no longer be paid') unless completable?
+      return { success: true, order: order } if order.paid? && order.tickets_issued_at.present?
 
-        complete!
-        nil
-      end
+      early_result = lock_and_complete
+      return early_result if early_result
 
-      early_result || { success: true, order: order.reload }
+      Tickets::IssuanceService.new(order: order.reload).call
+
+      { success: true, order: order.reload }
     end
 
     private
+
+    def lock_and_complete
+      order.with_lock do
+        next failure(:not_completable, 'This order can no longer be paid') unless completable? || order.paid?
+
+        complete! unless order.paid?
+        nil
+      end
+    end
 
     def complete!
       mark_order_paid
