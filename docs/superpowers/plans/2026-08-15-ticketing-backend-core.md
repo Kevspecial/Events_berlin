@@ -1063,6 +1063,8 @@ git commit -m "fix(inventory): base availability on live orders so lapsed carts 
 
 `BookingService` is superseded: it creates a bare `Booking` with no order, which can no longer be valid. It is removed here rather than left to rot.
 
+> **Known gap, closed in Task 19.** A free order is born `paid` here, but `Tickets::IssuanceService` does not exist until Task 11 and is only ever invoked from the Stripe webhook — which a free order never reaches. So as written, this task leaves free orders with no tickets and no confirmation email. Every unit test still passes; only the end-to-end test in Task 19 catches it. Task 19 wires issuance into this service, after the creation transaction commits. If you are implementing this plan fresh, close it here rather than waiting.
+
 - [ ] **Step 1: Write the failing test**
 
 Create `test/services/orders/creation_service_test.rb`:
