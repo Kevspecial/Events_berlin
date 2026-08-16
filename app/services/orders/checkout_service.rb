@@ -95,19 +95,28 @@ module Orders
     # is rounded independently, while order.total_amount is rounded once, so
     # the two are only guaranteed to agree while total_price divides evenly
     # into whole cents by quantity. Any future discount, proration, or manual
-    # adjustment can make them diverge by a cent or two per item even though
+    # adjustment can make them diverge by a cent or two per unit even though
     # the order is perfectly valid — and since nothing about the stored order
     # changes on retry, refusing outright would permanently block payment.
-    # Allow up to a cent of drift per line item; anything beyond that is real
-    # data drift, not rounding noise.
+    # Allow up to a cent of drift per unit; anything beyond that is real data
+    # drift, not rounding noise.
     def amounts_reconcile?(items)
       items_total_cents = items.sum { |item| item[:price_data][:unit_amount] * item[:quantity] }
       order_total_cents = (order.total_amount * 100).round
       gap = (items_total_cents - order_total_cents).abs
-      return false if gap > items.size
+      return false if gap > reconciliation_tolerance_cents
 
       log_rounding_gap(items_total_cents, order_total_cents) if gap.positive?
       true
+    end
+
+    # Each unit's price is rounded to whole cents independently, so a booking of
+    # N units can drift up to N/2 cents from the order's stored total through
+    # rounding alone. Allow a cent per unit: generous enough that legitimate
+    # rounding never blocks a sale, tight enough that real drift — which would
+    # be euros, not cents — still refuses to charge.
+    def reconciliation_tolerance_cents
+      order.bookings.sum(:quantity)
     end
 
     def log_rounding_gap(items_total_cents, order_total_cents)

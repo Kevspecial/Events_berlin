@@ -172,6 +172,29 @@ module Orders
 
       assert result[:success], result[:error]
     end
+
+    test 'tolerates rounding drift proportional to the number of units' do
+      # A booking of 4 units can drift up to 2 cents through per-unit rounding
+      # alone; a flat per-line-item tolerance would wrongly refuse this order.
+      booking = @order.bookings.first
+      booking.update_column(:quantity, 4) # rubocop:disable Rails/SkipsModelValidations
+      @order.update_column(:total_amount, @order.bookings.sum(:total_price) + 0.03) # rubocop:disable Rails/SkipsModelValidations
+
+      stub_session
+      result = Orders::CheckoutService.new(order: @order.reload).call
+
+      assert result[:success], result[:error]
+    end
+
+    test 'still refuses drift beyond the per-unit tolerance' do
+      @order.update_column(:total_amount, @order.total_amount + 25) # rubocop:disable Rails/SkipsModelValidations
+
+      result = Orders::CheckoutService.new(order: @order.reload).call
+
+      assert_not result[:success]
+      assert_equal :amount_mismatch, result[:code]
+      assert_not_requested :post, 'https://api.stripe.com/v1/checkout/sessions'
+    end
   end
   # rubocop:enable Metrics/ClassLength
 end
