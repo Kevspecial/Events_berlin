@@ -3,6 +3,7 @@
 require 'test_helper'
 
 module Orders
+  # rubocop:disable Metrics/ClassLength
   class CreationServiceTest < ActiveSupport::TestCase
     setup do
       @user = users(:one)
@@ -113,6 +114,17 @@ module Orders
       assert_not_nil result[:order].paid_at
     end
 
+    test 'a free order is issued its tickets immediately' do
+      free_event = events(:two)
+      free_tier = TicketType.create!(event: free_event, name: 'Free', price: 0, quantity: 50)
+
+      result = call([{ ticket_type_id: free_tier.id, quantity: 2 }], event: free_event)
+
+      assert result[:success], result[:error]
+      assert_equal 2, result[:order].reload.tickets.count
+      assert_not_nil result[:order].tickets_issued_at
+    end
+
     test 'writes nothing when any tier in the cart is unavailable' do
       @vip.update!(quantity: 0)
 
@@ -133,4 +145,5 @@ module Orders
              'expected the tier row to be locked with SELECT ... FOR UPDATE')
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

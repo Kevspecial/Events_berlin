@@ -1,11 +1,24 @@
 # frozen_string_literal: true
 
 module Orders
+  # Raised to unwind CreationService's transaction with a failure payload
+  # already shaped as the {success:, error:, code:} envelope callers expect.
+  class CreationServiceHalt < StandardError
+    attr_reader :payload
+
+    def initialize(payload)
+      @payload = payload
+      super(payload[:error])
+    end
+  end
+
   # Turns a cart of {ticket_type_id, quantity} pairs into a pending Order with
   # one Booking line item per tier. A zero-total order skips Stripe entirely and
   # is born paid.
   class CreationService
     attr_reader :user, :event, :items
+
+    Halt = CreationServiceHalt
 
     def initialize(user:, event:, items:)
       @user = user
@@ -13,26 +26,24 @@ module Orders
       @items = Array(items).map { |item| normalise(item) }
     end
 
-    Halt = Class.new(StandardError) do
-      attr_reader :payload
-
-      def initialize(payload)
-        @payload = payload
-        super(payload[:error])
-      end
-    end
-
     def call
       error = validate_shape
       return error if error
 
-      ActiveRecord::Base.transaction do
+      result = ActiveRecord::Base.transaction do
         tiers = lock_tiers
         availability_error = validate_availability(tiers)
         raise Halt, availability_error if availability_error
 
         build_order(tiers)
       end
+
+      # A free order is born paid and never touches Stripe, so no webhook will
+      # ever arrive to trigger issuance. Issue here instead, after the
+      # transaction commits so the job cannot outrun the order's visibility.
+      issue_tickets_for_free_order(result)
+
+      result
     rescue Halt => e
       e.payload
     end
@@ -49,6 +60,12 @@ module Orders
 
     def failure(code, message)
       { success: false, error: message, code: code }
+    end
+
+    def issue_tickets_for_free_order(result)
+      return unless result[:success] && result[:order].paid?
+
+      Tickets::IssuanceService.new(order: result[:order]).call
     end
 
     def validate_shape
