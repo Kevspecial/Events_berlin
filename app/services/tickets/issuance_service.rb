@@ -13,11 +13,20 @@ module Tickets
       @order = order
     end
 
+    # The order row is locked for the whole guard-and-issue sequence, not just
+    # the inserts: with_lock already reloads the row under SELECT ... FOR
+    # UPDATE, so checking tickets_issued_at and paid? against that same
+    # locked read costs nothing extra and closes the race where a second
+    # caller (e.g. a retried webhook) passes both guards before the first
+    # caller's inserts are visible. A second caller blocks on the lock and,
+    # on acquiring it, observes tickets_issued_at already set.
     def call
-      return { success: true, tickets: order.tickets.to_a } if order.tickets_issued_at.present?
-      return failure(:not_paid, 'Tickets are only issued for paid orders') unless order.paid?
+      order.with_lock do
+        next { success: true, tickets: order.tickets.to_a } if order.tickets_issued_at.present?
+        next failure(:not_paid, 'Tickets are only issued for paid orders') unless order.paid?
 
-      { success: true, tickets: issue_all }
+        { success: true, tickets: issue_all }
+      end
     end
 
     private

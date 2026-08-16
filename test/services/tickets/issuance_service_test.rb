@@ -90,5 +90,44 @@ module Tickets
 
       assert_equal 5, @order.reload.tickets.count
     end
+
+    test 'locks the order row before issuing' do
+      statements = []
+      collector = ->(_name, _start, _finish, _id, payload) { statements << payload[:sql] }
+
+      ActiveSupport::Notifications.subscribed(collector, 'sql.active_record') do
+        Tickets::IssuanceService.new(order: @order).call
+      end
+
+      assert(statements.any? { |sql| sql.include?('FOR UPDATE') },
+             'expected the order row to be locked before the issuance guard')
+    end
+
+    test 'a second issuance sees the first and adds nothing' do
+      first = Tickets::IssuanceService.new(order: @order).call
+      assert_equal 5, first[:tickets].size
+
+      assert_no_difference 'Ticket.count' do
+        second = Tickets::IssuanceService.new(order: @order.reload).call
+        assert second[:success]
+        assert_equal 5, second[:tickets].size
+        assert_equal first[:tickets].map(&:code).sort, second[:tickets].map(&:code).sort
+      end
+    end
+
+    test 'a code collision does not cost the order its other tickets' do
+      sequence = [
+        tickets(:issued_one).code,
+        'EB-Z9Y8X7W6V5T4', 'EB-Y8X7W6V5T4S3', 'EB-X7W6V5T4S3R2',
+        'EB-W6V5T4S3R2Q1', 'EB-V5T4S3R2Q1P0'
+      ]
+
+      Ticket.stub(:generate_code, -> { sequence.shift }) do
+        Tickets::IssuanceService.new(order: @order).call
+      end
+
+      assert_equal 5, @order.reload.tickets.count
+      assert_equal 5, @order.tickets.pluck(:code).uniq.size
+    end
   end
 end
