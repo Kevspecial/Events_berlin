@@ -1493,12 +1493,13 @@ In `config/routes.rb`, inside the `namespace :v1` block, replace the existing `r
 
 ```ruby
       resources :events do
-        resources :bookings, only: [:create]
         resources :orders, only: [:create]
       end
 
       resources :orders, only: %i[index show destroy]
 ```
+
+**Do not add `resources :bookings, only: [:create]` here.** Task 2 deleted `BookingsController#create`, so that route would point at a nonexistent action and turn a `POST` into an unhandled 500.
 
 - [ ] **Step 4: Write the policy**
 
