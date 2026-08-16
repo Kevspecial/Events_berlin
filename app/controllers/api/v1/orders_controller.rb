@@ -32,19 +32,42 @@ module Api
         event = Event.find(params[:event_id])
         authorize Order.new(user: current_user, event: event), :create?
 
-        result = Orders::CreationService.new(user: current_user, event: event, items: order_items).call
+        items = order_items
+        return render_invalid_items if items.nil?
 
+        render_creation_result(Orders::CreationService.new(user: current_user, event: event, items: items).call)
+      end
+
+      private
+
+      def render_creation_result(result)
         if result[:success]
-          render json: result[:order], serializer: OrderSerializer, include: ORDER_INCLUDES, status: :created
+          render json: result[:order], serializer: OrderSerializer,
+                 include: ORDER_INCLUDES, status: :created
         else
           render json: { error: result[:error], code: result[:code] }, status: :unprocessable_entity
         end
       end
 
-      private
-
+      # Returns nil when the payload is not a well-formed items array, so the
+      # caller can answer with the project's {error:, code:} envelope rather
+      # than letting ParameterMissing escape as an HTML 400.
       def order_items
-        params.require(:items).map { |item| item.permit(:ticket_type_id, :quantity).to_h }
+        raw = params[:items]
+        return nil unless raw.is_a?(Array)
+
+        raw.map do |item|
+          next nil unless item.respond_to?(:permit)
+
+          item.permit(:ticket_type_id, :quantity).to_h
+        end.compact
+      end
+
+      def render_invalid_items
+        render json: {
+          error: 'Provide items as an array of ticket_type_id and quantity pairs',
+          code: 'invalid_items'
+        }, status: :unprocessable_entity
       end
     end
   end

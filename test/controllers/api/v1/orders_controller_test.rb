@@ -54,6 +54,32 @@ module Api
         assert_equal 'sold_out', response.parsed_body['code']
       end
 
+      test 'create returns the standard error envelope when items is missing' do
+        post "/api/v1/events/#{@event.id}/orders",
+             params: {}, headers: auth_headers(@user), as: :json
+
+        assert_response :unprocessable_entity
+        assert_equal 'invalid_items', response.parsed_body['code']
+        assert response.parsed_body['error'].present?
+      end
+
+      test 'create returns the standard error envelope when items is not an array' do
+        post "/api/v1/events/#{@event.id}/orders",
+             params: { items: { ticket_type_id: @ga.id, quantity: 1 } },
+             headers: auth_headers(@user), as: :json
+
+        assert_response :unprocessable_entity
+        assert_equal 'invalid_items', response.parsed_body['code']
+      end
+
+      test 'create rejects an empty items array' do
+        post "/api/v1/events/#{@event.id}/orders",
+             params: { items: [] }, headers: auth_headers(@user), as: :json
+
+        assert_response :unprocessable_entity
+        assert_equal 'invalid_items', response.parsed_body['code']
+      end
+
       test 'index lists only my orders' do
         get '/api/v1/orders', headers: auth_headers(@user), as: :json
 

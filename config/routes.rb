@@ -30,7 +30,6 @@ Rails.application.routes.draw do
       delete 'logout', to: 'sessions#destroy'
 
       resources :events do
-        resources :bookings, only: [:create]
         resources :orders, only: [:create]
       end
 
