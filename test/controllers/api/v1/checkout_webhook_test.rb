@@ -60,6 +60,23 @@ module Api
         assert_response :success
       end
 
+      test 'a refund webhook voids the order tickets' do
+        order = orders(:paid_one)
+        order.update!(stripe_payment_intent_id: 'pi_refund_hook')
+
+        charge_event = Stripe::Event.construct_from(
+          type: 'charge.refunded',
+          data: { object: { object: 'charge', payment_intent: 'pi_refund_hook' } }
+        )
+        post_webhook(charge_event)
+
+        assert_response :success
+        order.reload
+        assert_equal 'refunded', order.status
+        assert(order.tickets.all?(&:cancelled?), 'expected every ticket to be voided')
+        assert(order.bookings.all? { |b| b.status == 'cancelled' })
+      end
+
       test 'rejects an invalid signature' do
         Stripe::Webhook.stub(:construct_event, ->(*) { raise Stripe::SignatureVerificationError.new('bad', 'sig') }) do
           post '/api/v1/checkout/webhook',

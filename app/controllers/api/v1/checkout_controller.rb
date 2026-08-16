@@ -53,8 +53,27 @@ module Api
         order = Order.find_by(stripe_payment_intent_id: intent)
         return if order.nil? || order.refunded?
 
-        order.update!(status: 'refunded', payment_status: 'refunded', refunded_at: Time.current)
+        ActiveRecord::Base.transaction do
+          order.update!(
+            status: 'refunded',
+            payment_status: 'refunded',
+            refunded_at: Time.current,
+            cancelled_at: order.cancelled_at || Time.current
+          )
+          void_tickets_for(order)
+        end
       end
+
+      # A refunded order's tickets must be voided so they stop scanning at
+      # the door, and a validation failure on that bulk transition must not
+      # block the refund from being recorded.
+      # rubocop:disable Rails/SkipsModelValidations
+      def void_tickets_for(order)
+        order.bookings.update_all(status: 'cancelled', updated_at: Time.current)
+        Ticket.where(booking_id: order.bookings.select(:id))
+              .update_all(status: 'cancelled', cancelled_at: Time.current, updated_at: Time.current)
+      end
+      # rubocop:enable Rails/SkipsModelValidations
 
       def find_order_for(session)
         id = session.metadata.respond_to?(:[]) ? session.metadata['order_id'] : nil

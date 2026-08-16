@@ -6,12 +6,13 @@ module Orders
   # rather than cancelling tickets the buyer was never refunded for.
   #
   # The eligibility check (paid? + cutoff) is re-verified under an
-  # order-level row lock immediately before the Stripe call, so two
-  # concurrent cancel requests can't both pass the check and both issue a
-  # refund. The lock is released again before the call: Stripe::Refund.create
-  # is a network round-trip and not idempotent without an explicit
-  # idempotency key, so it must not run while holding a row lock any longer
-  # than the check itself requires.
+  # order-level row lock immediately before the Stripe call. The lock only
+  # serialises the check-and-mutate sequence: it is released before the
+  # Stripe call, so two concurrent cancel requests can still both pass the
+  # check and both reach Stripe with the order still reading `paid`. What
+  # actually prevents a double refund is the deterministic idempotency key
+  # passed to Stripe::Refund.create below, which collapses both calls into a
+  # single refund server-side.
   class CancellationService
     attr_reader :order, :reason
 
@@ -75,7 +76,14 @@ module Orders
     def issue_refund
       return nil if order.free? || order.stripe_payment_intent_id.blank?
 
-      Stripe::Refund.create(payment_intent: order.stripe_payment_intent_id)
+      # The idempotency key, not the row lock, is what prevents a double
+      # refund: if two concurrent cancels both reach Stripe for this order,
+      # the shared key collapses them into a single refund and both callers
+      # receive the same refund object back.
+      Stripe::Refund.create(
+        { payment_intent: order.stripe_payment_intent_id },
+        { idempotency_key: "order-#{order.id}-refund" }
+      )
       nil
     rescue Stripe::StripeError => e
       Sentry.capture_exception(e) if defined?(Sentry)

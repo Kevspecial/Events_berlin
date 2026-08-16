@@ -41,6 +41,15 @@ module Orders
       end
     end
 
+    test 'sends a deterministic idempotency key with the refund' do
+      stub_refund
+      cancel
+
+      assert_requested(:post, 'https://api.stripe.com/v1/refunds') do |req|
+        req.headers['Idempotency-Key'] == "order-#{@order.id}-refund"
+      end
+    end
+
     test 'records the reason' do
       stub_refund
       cancel(reason: 'illness')
