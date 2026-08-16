@@ -4,13 +4,19 @@ class AddOrderToBookings < ActiveRecord::Migration[7.1]
   def up
     add_reference :bookings, :order, foreign_key: true, null: true, index: true
 
-    # Temporary column used only to pair each backfilled order back to the
-    # booking it came from. (user_id, event_id, created_at) is not unique, so
-    # matching on those columns can silently mispair or duplicate-pair
-    # bookings when a user has two bookings for the same event created at
-    # the same timestamp. Carrying the source booking id through the insert
-    # makes the pairing deterministic; the column is dropped once used.
-    execute 'ALTER TABLE orders ADD COLUMN backfill_booking_id bigint'
+    # Permanent provenance marker, not a temporary scratch column. It pairs
+    # each backfilled order back to the booking it came from: (user_id,
+    # event_id, created_at) is not unique, so matching on those columns can
+    # silently mispair or duplicate-pair bookings when a user has two
+    # bookings for the same event created at the same timestamp. Carrying
+    # the source booking id through the insert makes the pairing
+    # deterministic. It is kept (not dropped) after use because a non-null
+    # value means this order is a synthetic wrapper created by this backfill
+    # rather than a real customer purchase -- that is what lets `down` tell
+    # backfilled orders apart from application-created ones and roll back
+    # safely, and it lets later reporting exclude synthetic orders from
+    # revenue figures.
+    add_column :orders, :backfill_booking_id, :bigint
 
     # Wrap every pre-existing booking in a single-line shim order so no
     # historical row is lost. Uses raw SQL so it never depends on model code.
@@ -66,27 +72,28 @@ class AddOrderToBookings < ActiveRecord::Migration[7.1]
       WHERE o.backfill_booking_id = b.id
     SQL
 
-    execute 'ALTER TABLE orders DROP COLUMN backfill_booking_id'
+    add_index :orders, :backfill_booking_id
 
     change_column_null :bookings, :order_id, false
   end
 
   def down
-    # The backfill can only be undone while every order came from it. Once the
-    # application has created real orders, rolling back would destroy live
-    # purchase records, so refuse rather than guess which rows are safe.
-    orphan_orders = select_value(<<~SQL.squish).to_i
-      SELECT COUNT(*) FROM orders o
-      WHERE NOT EXISTS (SELECT 1 FROM bookings b WHERE b.order_id = o.id)
-    SQL
+    # Orders created by the application have no backfill marker. Rolling back
+    # would delete them along with the synthetic ones, so refuse instead of
+    # guessing. The lock closes the window between counting and deleting.
+    ActiveRecord::Base.transaction do
+      execute 'LOCK TABLE orders IN EXCLUSIVE MODE'
 
-    if orphan_orders.positive?
-      raise ActiveRecord::IrreversibleMigration,
-            "Refusing to roll back: #{orphan_orders} order(s) exist that this " \
-            'migration did not create. Remove them manually if you are certain.'
+      real_orders = select_value('SELECT COUNT(*) FROM orders WHERE backfill_booking_id IS NULL').to_i
+
+      if real_orders.positive?
+        raise ActiveRecord::IrreversibleMigration,
+              "Refusing to roll back: #{real_orders} order(s) were created by the " \
+              'application, not by this backfill. Rolling back would destroy them.'
+      end
+
+      execute 'DELETE FROM orders WHERE backfill_booking_id IS NOT NULL'
+      remove_reference :bookings, :order, foreign_key: true
     end
-
-    remove_reference :bookings, :order, foreign_key: true
-    execute 'DELETE FROM orders'
   end
 end

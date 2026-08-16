@@ -163,6 +163,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_15_120200) do
     t.string "refund_reason"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "backfill_booking_id"
+    t.index ["backfill_booking_id"], name: "index_orders_on_backfill_booking_id"
     t.index ["event_id"], name: "index_orders_on_event_id"
     t.index ["expires_at"], name: "index_orders_on_expires_at"
     t.index ["status"], name: "index_orders_on_status"
