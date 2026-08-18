@@ -1,0 +1,125 @@
+# ------------------------------------------------------------------------
+# PRODUCTION — the only stack publicly routed, via Cloudflare Tunnel on the
+# `websecure` Traefik entrypoint (*.eventberlin.kancodes.de, TLS).
+#
+# No source is bind-mounted; images are built from the baked-in source tree
+# and run in RAILS_ENV=production / NODE_ENV=production. Only named volumes
+# holding runtime state are mounted. Secrets are required (`:?...`) rather
+# than defaulted, so the stack refuses to start with missing configuration.
+#
+# Note: config/environments/production.rb sets config.require_master_key =
+# true unconditionally, so RAILS_MASTER_KEY must also be supplied even
+# though SECRET_KEY_BASE is set separately — see .env.example.
+# ------------------------------------------------------------------------
+name: eventberlin-prod
+
+services:
+  db:
+    image: postgres:14-alpine
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set — see .env.example}
+      POSTGRES_USER: postgres
+      POSTGRES_DB: event_berlin_production
+    networks:
+      - backend
+    # No published ports — reachable only from containers on `backend`.
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - backend
+
+  web:
+    build: .
+    volumes:
+      - rails_tmp_prod:/rails/tmp
+    depends_on:
+      - db
+      - redis
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set — see .env.example}@db:5432/event_berlin_production
+      RAILS_ENV: production
+      RAILS_LOG_TO_STDOUT: "true"
+      RAILS_SERVE_STATIC_FILES: "true"
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE must be set — see .env.example}
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?RAILS_MASTER_KEY must be set — see .env.example}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?STRIPE_SECRET_KEY must be set — see .env.example}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?STRIPE_WEBHOOK_SECRET must be set — see .env.example}
+      FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL must be set — see .env.example}
+      DEVISE_JWT_SECRET_KEY: ${DEVISE_JWT_SECRET_KEY:?DEVISE_JWT_SECRET_KEY must be set — see .env.example}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS must be set — see .env.example}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:?SENDGRID_API_KEY must be set — see .env.example}
+      MAILER_DOMAIN: ${MAILER_DOMAIN:?MAILER_DOMAIN must be set — see .env.example}
+    networks:
+      - backend
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      # Public — via Cloudflare Tunnel, TLS
+      - "traefik.http.routers.eventberlin-api-prod.rule=Host(`api.eventberlin.kancodes.de`)"
+      - "traefik.http.routers.eventberlin-api-prod.entrypoints=websecure"
+      - "traefik.http.routers.eventberlin-api-prod.tls=true"
+      - "traefik.http.routers.eventberlin-api-prod.service=eventberlin-api-prod"
+      - "traefik.http.services.eventberlin-api-prod.loadbalancer.server.port=3000"
+
+  worker:
+    build: .
+    command: bundle exec sidekiq
+    volumes:
+      - rails_tmp_prod:/rails/tmp
+    depends_on:
+      - db
+      - redis
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set — see .env.example}@db:5432/event_berlin_production
+      RAILS_ENV: production
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE must be set — see .env.example}
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?RAILS_MASTER_KEY must be set — see .env.example}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?STRIPE_SECRET_KEY must be set — see .env.example}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?STRIPE_WEBHOOK_SECRET must be set — see .env.example}
+      FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL must be set — see .env.example}
+      DEVISE_JWT_SECRET_KEY: ${DEVISE_JWT_SECRET_KEY:?DEVISE_JWT_SECRET_KEY must be set — see .env.example}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS must be set — see .env.example}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:?SENDGRID_API_KEY must be set — see .env.example}
+      MAILER_DOMAIN: ${MAILER_DOMAIN:?MAILER_DOMAIN must be set — see .env.example}
+    networks:
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+      args:
+        NEXT_PUBLIC_API_URL: https://api.eventberlin.kancodes.de/api/v1
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://api.eventberlin.kancodes.de/api/v1
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.eventberlin-web-prod.rule=Host(`eventberlin.kancodes.de`)"
+      - "traefik.http.routers.eventberlin-web-prod.entrypoints=websecure"
+      - "traefik.http.routers.eventberlin-web-prod.tls=true"
+      - "traefik.http.routers.eventberlin-web-prod.service=eventberlin-web-prod"
+      - "traefik.http.services.eventberlin-web-prod.loadbalancer.server.port=3001"
+
+networks:
+  proxy:
+    external: true
+  backend:
+    driver: bridge
+
+volumes:
+  postgres_data_prod:
+  redis_data_prod:
+  rails_tmp_prod:
