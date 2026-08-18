@@ -1,10 +1,21 @@
+# ------------------------------------------------------------------------
+# LOCAL DEVELOPMENT ONLY — LAN / Tailscale access via the `web` entrypoint.
+#
+# This stack runs Rails and Next.js in development mode with the host
+# source tree bind-mounted read-write into the containers for fast local
+# iteration. It must NEVER be given a public router (no `websecure`
+# entrypoint, no public host, no TLS labels). Doing so
+# would let anyone reach a development-mode server with live-reloaded,
+# writable source — an arbitrary file write becomes remote code execution
+# on the next request. Production is served exclusively by stack.prod.yml.
+# ------------------------------------------------------------------------
 services:
   db:
     image: postgres:14-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set — see .env.example}
       POSTGRES_USER: postgres
       POSTGRES_DB: event_berlin_development
     networks:
@@ -29,7 +40,7 @@ services:
       - db
       - redis
     environment:
-      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/event_berlin_development
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set — see .env.example}@db:5432/event_berlin_development
       RAILS_ENV: development
       RAILS_LOG_TO_STDOUT: "true"
       RAILS_SERVE_STATIC_FILES: "true"
@@ -44,11 +55,6 @@ services:
       - "traefik.http.routers.eventberlin-api-binary.rule=Host(`api.eventberlin.binary`)"
       - "traefik.http.routers.eventberlin-api-binary.entrypoints=web"
       - "traefik.http.routers.eventberlin-api-binary.service=eventberlin-api"
-      # Public — via Cloudflare Tunnel, TLS
-      - "traefik.http.routers.eventberlin-api-kancodes.rule=Host(`api.eventberlin.kancodes.de`)"
-      - "traefik.http.routers.eventberlin-api-kancodes.entrypoints=websecure"
-      - "traefik.http.routers.eventberlin-api-kancodes.tls=true"
-      - "traefik.http.routers.eventberlin-api-kancodes.service=eventberlin-api"
       - "traefik.http.services.eventberlin-api.loadbalancer.server.port=3000"
 
   worker:
@@ -61,7 +67,7 @@ services:
       - db
       - redis
     environment:
-      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/event_berlin_development
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set — see .env.example}@db:5432/event_berlin_development
       RAILS_ENV: development
       REDIS_URL: redis://redis:6379/0
     networks:
@@ -71,11 +77,12 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: dev
     command: npm run dev -- --hostname 0.0.0.0 --port 3001
     depends_on:
       - web
     environment:
-      NEXT_PUBLIC_API_URL: https://api.eventberlin.kancodes.de/api/v1
+      NEXT_PUBLIC_API_URL: http://api.eventberlin.binary/api/v1
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
@@ -88,10 +95,6 @@ services:
       - "traefik.http.routers.eventberlin-web-binary.rule=Host(`eventberlin.binary`)"
       - "traefik.http.routers.eventberlin-web-binary.entrypoints=web"
       - "traefik.http.routers.eventberlin-web-binary.service=eventberlin-web"
-      - "traefik.http.routers.eventberlin-web-kancodes.rule=Host(`eventberlin.kancodes.de`)"
-      - "traefik.http.routers.eventberlin-web-kancodes.entrypoints=websecure"
-      - "traefik.http.routers.eventberlin-web-kancodes.tls=true"
-      - "traefik.http.routers.eventberlin-web-kancodes.service=eventberlin-web"
       - "traefik.http.services.eventberlin-web.loadbalancer.server.port=3001"
 
 networks:
