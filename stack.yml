@@ -9,6 +9,8 @@
 # writable source — an arbitrary file write becomes remote code execution
 # on the next request. Production is served exclusively by stack.prod.yml.
 # ------------------------------------------------------------------------
+name: eventberlin-dev
+
 services:
   db:
     image: postgres:14-alpine
@@ -45,6 +47,12 @@ services:
       RAILS_LOG_TO_STDOUT: "true"
       RAILS_SERVE_STATIC_FILES: "true"
       REDIS_URL: redis://redis:6379/0
+      # Stripe features are inert locally until real test keys are supplied
+      # via .env (see .env.example). FRONTEND_URL defaults to the LAN dev
+      # host used by the frontend service below.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://eventberlin.binary}
     networks:
       - backend
       - proxy
@@ -70,6 +78,11 @@ services:
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set — see .env.example}@db:5432/event_berlin_development
       RAILS_ENV: development
       REDIS_URL: redis://redis:6379/0
+      # Stripe features are inert locally until real test keys are supplied
+      # via .env (see .env.example).
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://eventberlin.binary}
     networks:
       - backend
 
