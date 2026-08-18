@@ -53,6 +53,13 @@ services:
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       FRONTEND_URL: ${FRONTEND_URL:-http://eventberlin.binary}
+      # Placeholder only — not a real secret. JWTs signed with this value are
+      # worthless outside local development and must never be trusted in any
+      # shared or public environment.
+      DEVISE_JWT_SECRET_KEY: ${DEVISE_JWT_SECRET_KEY:-dev-only-not-a-real-secret}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://eventberlin.binary,http://localhost:3001}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      MAILER_DOMAIN: ${MAILER_DOMAIN:-eventberlin.binary}
     networks:
       - backend
       - proxy
@@ -83,6 +90,13 @@ services:
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       FRONTEND_URL: ${FRONTEND_URL:-http://eventberlin.binary}
+      # Placeholder only — not a real secret. JWTs signed with this value are
+      # worthless outside local development and must never be trusted in any
+      # shared or public environment.
+      DEVISE_JWT_SECRET_KEY: ${DEVISE_JWT_SECRET_KEY:-dev-only-not-a-real-secret}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://eventberlin.binary,http://localhost:3001}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      MAILER_DOMAIN: ${MAILER_DOMAIN:-eventberlin.binary}
     networks:
       - backend
 

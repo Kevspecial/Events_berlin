@@ -51,6 +51,10 @@ services:
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?STRIPE_SECRET_KEY must be set — see .env.example}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?STRIPE_WEBHOOK_SECRET must be set — see .env.example}
       FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL must be set — see .env.example}
+      DEVISE_JWT_SECRET_KEY: ${DEVISE_JWT_SECRET_KEY:?DEVISE_JWT_SECRET_KEY must be set — see .env.example}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS must be set — see .env.example}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:?SENDGRID_API_KEY must be set — see .env.example}
+      MAILER_DOMAIN: ${MAILER_DOMAIN:?MAILER_DOMAIN must be set — see .env.example}
     networks:
       - backend
       - proxy
@@ -81,6 +85,10 @@ services:
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?STRIPE_SECRET_KEY must be set — see .env.example}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?STRIPE_WEBHOOK_SECRET must be set — see .env.example}
       FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL must be set — see .env.example}
+      DEVISE_JWT_SECRET_KEY: ${DEVISE_JWT_SECRET_KEY:?DEVISE_JWT_SECRET_KEY must be set — see .env.example}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS must be set — see .env.example}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:?SENDGRID_API_KEY must be set — see .env.example}
+      MAILER_DOMAIN: ${MAILER_DOMAIN:?MAILER_DOMAIN must be set — see .env.example}
     networks:
       - backend
 
